@@ -11,23 +11,34 @@ import TicTacToe from './components/TicTacToe';
 import Game2048 from './components/Game2048';
 import RockPaperScissors from './components/RockPaperScissors';
 import GameTeaser from './components/GameTeaser';
+import SnakeGame from './components/SnakeGame';
+import FlappyDash from './components/FlappyDash';
+import WhackAMole from './components/WhackAMole';
+import StackTower from './components/StackTower';
+import SkyShooter from './components/SkyShooter';
+import DeepSudoku from './components/DeepSudoku';
+import PocketPool from './components/PocketPool';
+import MarineCheckers from './components/MarineCheckers';
+import MemoryMatch from './components/MemoryMatch';
+import EndlessRunner from './components/EndlessRunner';
+import ConnectFour from './components/ConnectFour';
 import { playSound, triggerHaptic } from './utils/audio';
 
 const GAMES: Game[] = [
   { id: 'ttt', name: 'Tic-Tac-Toe', phase: 1, meta: 'Playable now', desc: 'Classic 3x3 grid vs a smart defensive AI.', playable: true },
   { id: 'g2048', name: '2048 Sliders', phase: 1, meta: 'Playable now', desc: 'Slide and merge tiles to reach the glorious 2048.', playable: true },
   { id: 'rps', name: 'Rock Paper Scissors', phase: 1, meta: 'Playable now', desc: 'Best of five rounds against the Deep Sea Octopus.', playable: true },
-  { id: 'memory', name: 'Memory Match', phase: 1, meta: 'Teaser Match', desc: 'Flip underwater tiles, find every matching pair.', playable: false },
-  { id: 'whack', name: 'Whack-a-Mole', phase: 1, meta: 'Rapid Clicker', desc: 'Tap rapid moles before they submerge back down.', playable: false },
-  { id: 'flappy', name: 'Flappy Dash', phase: 2, meta: 'Phase 2 Teaser', desc: 'Tap to glide between gaps in the deep coral reefs.', playable: false },
-  { id: 'stack', name: 'Stack Tower', phase: 2, meta: 'Phase 2 Teaser', desc: 'Time your drop to stack blocks perfectly into the sky.', playable: false },
-  { id: 'snake', name: 'Ocean Snake', phase: 2, meta: 'Phase 2 Teaser', desc: 'Grow your trail without doubling back or hitting reefs.', playable: false },
-  { id: 'runner', name: 'Endless Runner', phase: 2, meta: 'Phase 2 Teaser', desc: 'Jump over anchors as the speed keeps climbing.', playable: false },
-  { id: 'shooter', name: 'Sky Shooter', phase: 2, meta: 'Phase 2 Teaser', desc: 'Tap to fire bubble torpedos at targets.', playable: false },
-  { id: 'sudoku', name: 'Deep Sudoku', phase: 3, meta: 'Phase 3 Teaser', desc: 'Fill the grid, one logical step at a time.', playable: false },
-  { id: 'c4', name: 'Connect Four', phase: 3, meta: 'Phase 3 Teaser', desc: 'Match four colored shells in a row to defeat the AI.', playable: false },
-  { id: 'checkers', name: 'Marine Checkers', phase: 3, meta: 'Phase 3 Teaser', desc: 'Classic checker board strategy, jump and capture.', playable: false },
-  { id: 'pool', name: 'Pocket Pool', phase: 3, meta: 'Phase 3 Teaser', desc: 'Line up shots, bounce shells, sink every ball.', playable: false },
+  { id: 'memory', name: 'Memory Match', phase: 1, meta: 'Playable now', desc: 'Flip underwater tiles, find every matching pair.', playable: true },
+  { id: 'whack', name: 'Whack-a-Mole', phase: 1, meta: 'Playable now', desc: 'Tap rapid moles before they submerge back down.', playable: true },
+  { id: 'flappy', name: 'Flappy Dash', phase: 2, meta: 'Playable now', desc: 'Tap to glide between gaps in the deep coral reefs.', playable: true },
+  { id: 'stack', name: 'Stack Tower', phase: 2, meta: 'Playable now', desc: 'Time your drop to stack blocks perfectly into the sky.', playable: true },
+  { id: 'snake', name: 'Ocean Snake', phase: 2, meta: 'Playable now', desc: 'Grow your trail without doubling back or hitting reefs.', playable: true },
+  { id: 'runner', name: 'Endless Runner', phase: 2, meta: 'Playable now', desc: 'Jump over anchors as the speed keeps climbing.', playable: true },
+  { id: 'shooter', name: 'Sky Shooter', phase: 2, meta: 'Playable now', desc: 'Tap to fire bubble torpedos at targets.', playable: true },
+  { id: 'sudoku', name: 'Deep Sudoku', phase: 3, meta: 'Playable now', desc: 'Fill the grid, one logical step at a time.', playable: true },
+  { id: 'c4', name: 'Connect Four', phase: 3, meta: 'Playable now', desc: 'Match four colored shells in a row to defeat the AI.', playable: true },
+  { id: 'checkers', name: 'Marine Checkers', phase: 3, meta: 'Playable now', desc: 'Classic checker board strategy, jump and capture.', playable: true },
+  { id: 'pool', name: 'Pocket Pool', phase: 3, meta: 'Playable now', desc: 'Line up shots, bounce shells, sink every ball.', playable: true },
 ];
 
 const PHASE_COLORS: Record<number, { bg: string; text: string; border: string }> = {
@@ -40,7 +51,7 @@ const AVATARS = ['🐙', '🐳', '🐢', '🦈', '🦀', '🦑', '🐠', '🐚',
 
 export default function App() {
   const [user, setUser] = useState<UserProgress | null>(null);
-  const [activeScreen, setActiveScreen] = useState<'hub' | 'ttt' | 'g2048' | 'rps' | 'teaser'>('hub');
+  const [activeScreen, setActiveScreen] = useState<'hub' | 'ttt' | 'g2048' | 'rps' | 'teaser' | 'snake' | 'flappy' | 'whack' | 'stack' | 'shooter' | 'sudoku' | 'pool' | 'checkers' | 'memory' | 'runner' | 'c4'>('hub');
   const [selectedTeaserGame, setSelectedTeaserGame] = useState<Game | null>(null);
   const [activeTab, setActiveTab] = useState<'arcade' | 'quests' | 'settings'>('arcade');
 
@@ -154,13 +165,7 @@ export default function App() {
     completeQuest('play_game');
 
     if (game.playable) {
-      if (game.id === 'ttt') {
-        setActiveScreen('ttt');
-      } else if (game.id === 'g2048') {
-        setActiveScreen('g2048');
-      } else if (game.id === 'rps') {
-        setActiveScreen('rps');
-      }
+      setActiveScreen(game.id as any);
     } else {
       setSelectedTeaserGame(game);
       setActiveScreen('teaser');
@@ -656,6 +661,127 @@ export default function App() {
 
                   {activeScreen === 'rps' && (
                     <RockPaperScissors
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'snake' && (
+                    <SnakeGame
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'flappy' && (
+                    <FlappyDash
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'whack' && (
+                    <WhackAMole
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'stack' && (
+                    <StackTower
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'shooter' && (
+                    <SkyShooter
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'sudoku' && (
+                    <DeepSudoku
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'pool' && (
+                    <PocketPool
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'checkers' && (
+                    <MarineCheckers
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'memory' && (
+                    <MemoryMatch
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'runner' && (
+                    <EndlessRunner
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'c4' && (
+                    <ConnectFour
                       onBack={() => {
                         playSound('tap', user.soundEnabled);
                         setActiveScreen('hub');
