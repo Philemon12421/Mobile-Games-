@@ -1,0 +1,696 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Gamepad2, Search, Settings, ShieldCheck, HelpCircle, 
+  Sparkles, Volume2, VolumeX, Smartphone, Trophy, Award, 
+  TrendingUp, Compass, Flame, Info, CheckCircle2, ChevronRight, Check
+} from 'lucide-react';
+import { Game, UserProgress } from './types';
+import Onboarding from './components/Onboarding';
+import TicTacToe from './components/TicTacToe';
+import Game2048 from './components/Game2048';
+import RockPaperScissors from './components/RockPaperScissors';
+import GameTeaser from './components/GameTeaser';
+import { playSound, triggerHaptic } from './utils/audio';
+
+const GAMES: Game[] = [
+  { id: 'ttt', name: 'Tic-Tac-Toe', phase: 1, meta: 'Playable now', desc: 'Classic 3x3 grid vs a smart defensive AI.', playable: true },
+  { id: 'g2048', name: '2048 Sliders', phase: 1, meta: 'Playable now', desc: 'Slide and merge tiles to reach the glorious 2048.', playable: true },
+  { id: 'rps', name: 'Rock Paper Scissors', phase: 1, meta: 'Playable now', desc: 'Best of five rounds against the Deep Sea Octopus.', playable: true },
+  { id: 'memory', name: 'Memory Match', phase: 1, meta: 'Teaser Match', desc: 'Flip underwater tiles, find every matching pair.', playable: false },
+  { id: 'whack', name: 'Whack-a-Mole', phase: 1, meta: 'Rapid Clicker', desc: 'Tap rapid moles before they submerge back down.', playable: false },
+  { id: 'flappy', name: 'Flappy Dash', phase: 2, meta: 'Phase 2 Teaser', desc: 'Tap to glide between gaps in the deep coral reefs.', playable: false },
+  { id: 'stack', name: 'Stack Tower', phase: 2, meta: 'Phase 2 Teaser', desc: 'Time your drop to stack blocks perfectly into the sky.', playable: false },
+  { id: 'snake', name: 'Ocean Snake', phase: 2, meta: 'Phase 2 Teaser', desc: 'Grow your trail without doubling back or hitting reefs.', playable: false },
+  { id: 'runner', name: 'Endless Runner', phase: 2, meta: 'Phase 2 Teaser', desc: 'Jump over anchors as the speed keeps climbing.', playable: false },
+  { id: 'shooter', name: 'Sky Shooter', phase: 2, meta: 'Phase 2 Teaser', desc: 'Tap to fire bubble torpedos at targets.', playable: false },
+  { id: 'sudoku', name: 'Deep Sudoku', phase: 3, meta: 'Phase 3 Teaser', desc: 'Fill the grid, one logical step at a time.', playable: false },
+  { id: 'c4', name: 'Connect Four', phase: 3, meta: 'Phase 3 Teaser', desc: 'Match four colored shells in a row to defeat the AI.', playable: false },
+  { id: 'checkers', name: 'Marine Checkers', phase: 3, meta: 'Phase 3 Teaser', desc: 'Classic checker board strategy, jump and capture.', playable: false },
+  { id: 'pool', name: 'Pocket Pool', phase: 3, meta: 'Phase 3 Teaser', desc: 'Line up shots, bounce shells, sink every ball.', playable: false },
+];
+
+const PHASE_COLORS: Record<number, { bg: string; text: string; border: string }> = {
+  1: { bg: 'bg-coral/10', text: 'text-coral', border: 'border-coral/30' },
+  2: { bg: 'bg-amber/10', text: 'text-amber', border: 'border-amber/30' },
+  3: { bg: 'bg-purple/10', text: 'text-purple', border: 'border-purple/30' },
+};
+
+const AVATARS = ['🐙', '🐳', '🐢', '🦈', '🦀', '🦑', '🐠', '🐚', '🐬'];
+
+export default function App() {
+  const [user, setUser] = useState<UserProgress | null>(null);
+  const [activeScreen, setActiveScreen] = useState<'hub' | 'ttt' | 'g2048' | 'rps' | 'teaser'>('hub');
+  const [selectedTeaserGame, setSelectedTeaserGame] = useState<Game | null>(null);
+  const [activeTab, setActiveTab] = useState<'arcade' | 'quests' | 'settings'>('arcade');
+
+  // Search and Category filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPhase, setSelectedPhase] = useState<number | 'all'>('all');
+
+  // Time state for mobile status bar
+  const [timeStr, setTimeStr] = useState('12:00');
+
+  // Quest achievements
+  const [quests, setQuests] = useState([
+    { id: 'play_game', title: 'Explore Any Game', desc: 'Launch a game or teaser from the console', reward: 20, done: false },
+    { id: 'high_score', title: 'Earn High Score', desc: 'Reach 100+ score in 2048 Sliders', reward: 50, done: false },
+    { id: 'win_ttt', title: 'Victory Standard', desc: 'Outsmart the AI in Tic-Tac-Toe', reward: 35, done: false },
+    { id: 'spin_wheel', title: 'Gamer Fortune', desc: 'Spin the release wheel in any preview', reward: 15, done: false },
+  ]);
+
+  // Load user data on startup
+  useEffect(() => {
+    const saved = localStorage.getItem('ocean_games_user');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setUser(parsed);
+      } catch {
+        // Fallback
+      }
+    }
+
+    // Set up ticking clock
+    const updateTime = () => {
+      const now = new Date();
+      let h = now.getHours();
+      const m = now.getMinutes().toString().padStart(2, '0');
+      const period = h >= 12 ? 'PM' : 'AM';
+      h = h % 12 || 12;
+      setTimeStr(`${h}:${m} ${period}`);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Save progress state helper
+  const saveProgress = (updatedUser: UserProgress) => {
+    setUser(updatedUser);
+    localStorage.setItem('ocean_games_user', JSON.stringify(updatedUser));
+  };
+
+  // Onboarding Complete Handler
+  const handleOnboardingComplete = (newUser: UserProgress) => {
+    saveProgress(newUser);
+  };
+
+  // Add coins helper (adds a pleasant visual increment)
+  const handleAddCoins = (amount: number) => {
+    if (!user) return;
+    const nextCoins = user.coins + amount;
+    const nextUser = { ...user, coins: nextCoins };
+    saveProgress(nextUser);
+  };
+
+  // Update 2048 High Score helper
+  const handleUpdateHighScore = (score: number) => {
+    if (!user) return;
+    const nextUser = {
+      ...user,
+      highScores: {
+        ...user.highScores,
+        g2048: score
+      }
+    };
+    saveProgress(nextUser);
+
+    if (score >= 100) {
+      completeQuest('high_score');
+    }
+  };
+
+  // Trigger achievement complete
+  const completeQuest = (questId: string) => {
+    setQuests((prev) => 
+      prev.map((q) => {
+        if (q.id === questId && !q.done) {
+          playSound('win', user?.soundEnabled);
+          triggerHaptic(30, user?.hapticEnabled);
+          handleAddCoins(q.reward);
+          return { ...q, done: true };
+        }
+        return q;
+      })
+    );
+  };
+
+  // Reset progress entirely (back to onboarding)
+  const resetProgress = () => {
+    if (confirm('Are you sure you want to reset your gamer profile and scores?')) {
+      localStorage.removeItem('ocean_games_user');
+      setUser(null);
+      setActiveScreen('hub');
+      setActiveTab('arcade');
+      setQuests((prev) => prev.map((q) => ({ ...q, done: false })));
+    }
+  };
+
+  const handleLaunchGame = (game: Game) => {
+    playSound('tap', user?.soundEnabled);
+    triggerHaptic(15, user?.hapticEnabled);
+
+    completeQuest('play_game');
+
+    if (game.playable) {
+      if (game.id === 'ttt') {
+        setActiveScreen('ttt');
+      } else if (game.id === 'g2048') {
+        setActiveScreen('g2048');
+      } else if (game.id === 'rps') {
+        setActiveScreen('rps');
+      }
+    } else {
+      setSelectedTeaserGame(game);
+      setActiveScreen('teaser');
+    }
+  };
+
+  // Custom UI avatar helper
+  const getGameEmoji = (id: string) => {
+    const emojis: Record<string, string> = {
+      ttt: '❌',
+      g2048: '🧩',
+      rps: '✊',
+      memory: '🎴',
+      whack: '🦦',
+      flappy: '🐤',
+      stack: '🧱',
+      snake: '🐍',
+      runner: '🏃',
+      shooter: '🚀',
+      sudoku: '🔢',
+      c4: '🔵',
+      checkers: '🏁',
+      pool: '🎱',
+    };
+    return emojis[id] || '🎮';
+  };
+
+  // Filters calculation
+  const filteredGames = GAMES.filter((game) => {
+    const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          game.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPhase = selectedPhase === 'all' || game.phase === selectedPhase;
+    return matchesSearch && matchesPhase;
+  });
+
+  // Current theme tint
+  const accentColor = user?.themeColor || '#FF6B5D';
+
+  return (
+    <div className="min-h-screen bg-ink flex items-center justify-center p-0 sm:p-4 md:p-6 select-none" id="app_viewport">
+      
+      {/* Handheld Device Frame for immersive mobile gaming feeling */}
+      <div 
+        className="w-full h-screen sm:h-[840px] sm:max-w-[430px] sm:rounded-[48px] bg-ink sm:border-8 sm:border-line shadow-2xl relative overflow-hidden flex flex-col transition-all duration-300"
+        style={{ borderColor: accentColor }}
+        id="phone_simulator"
+      >
+        {/* Simulator Notch / Top Speaker Bar on Desktop */}
+        <div className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-ink rounded-b-2xl z-40 flex items-center justify-center">
+          <div className="w-12 h-1 bg-ink-soft/40 rounded-full" />
+        </div>
+
+        {/* Device Status Bar */}
+        <div className="h-10 bg-bg text-ink px-6 pt-2 flex justify-between items-center z-30 select-none text-xs font-bold" id="device_status_bar">
+          <span className="font-sans">{timeStr}</span>
+          {/* Notch Spacer */}
+          <div className="w-16 h-4 sm:block hidden" />
+          <div className="flex items-center gap-1.5" id="status_icons">
+            <span className="text-[10px]">LTE</span>
+            <div className="flex gap-0.5 items-end h-3">
+              <span className="w-0.5 h-1 bg-ink rounded-xs" />
+              <span className="w-0.5 h-1.5 bg-ink rounded-xs" />
+              <span className="w-0.5 h-2 bg-ink rounded-xs" />
+              <span className="w-0.5 h-2.5 bg-ink rounded-xs" />
+            </div>
+            {/* Battery */}
+            <div className="w-5 h-2.5 border border-ink rounded-xs p-0.5 flex items-center">
+              <div className="w-full h-full bg-ink rounded-xs" />
+            </div>
+          </div>
+        </div>
+
+        {/* Content Router */}
+        <div className="flex-1 overflow-hidden relative bg-bg flex flex-col" id="app_main_content">
+          <AnimatePresence mode="wait">
+            {!user ? (
+              <motion.div 
+                key="onboarding"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full"
+              >
+                <Onboarding onComplete={handleOnboardingComplete} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="arcade_router"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="h-full flex flex-col"
+              >
+                {/* Embedded Screen Views */}
+                <div className="flex-1 overflow-hidden relative">
+                  
+                  {activeScreen === 'hub' && (
+                    <div className="h-full flex flex-col p-5 pb-0" id="hub_view">
+                      
+                      {/* Brand Header */}
+                      <div className="flex justify-between items-center mb-3" id="hub_header">
+                        <div>
+                          <h1 className="font-display font-extrabold text-2xl tracking-tight text-ink flex items-center gap-1.5 leading-none">
+                            Ocean<span style={{ color: accentColor }}>Games</span>
+                          </h1>
+                          <p className="text-[10px] font-bold text-ink-soft/70 uppercase tracking-widest mt-0.5">
+                            Play instantly • Zero blue
+                          </p>
+                        </div>
+
+                        {/* Gold coin balance readout */}
+                        <motion.div 
+                          whileTap={{ scale: 0.95 }}
+                          className="flex items-center gap-1.5 bg-surface border border-line rounded-full py-1.5 px-3.5 shadow-sm font-display font-extrabold text-sm text-ink-soft"
+                          id="coin_pouch"
+                        >
+                          <span className="text-amber animate-pulse">🪙</span>
+                          <span className="text-ink font-sans font-black">{user.coins}</span>
+                        </motion.div>
+                      </div>
+
+                      {/* Dynamic Tab Selector (Arcade, Quests, Profile/Settings) */}
+                      {activeTab === 'arcade' && (
+                        <div className="flex-1 flex flex-col overflow-hidden" id="tab_arcade_view">
+                          
+                          {/* Search bar & filters panel */}
+                          <div className="space-y-2.5 mb-4" id="search_and_filters">
+                            <div className="relative">
+                              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft/50" />
+                              <input
+                                type="text"
+                                placeholder="Search games..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-surface border border-line focus:border-coral rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none placeholder:text-ink-soft/40 transition-colors"
+                              />
+                            </div>
+
+                            {/* Phase filter category tabs */}
+                            <div className="flex gap-1.5 overflow-x-auto pb-1" id="phase_filters">
+                              <button
+                                onClick={() => setSelectedPhase('all')}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                  selectedPhase === 'all'
+                                    ? 'bg-ink text-white shadow-xs'
+                                    : 'bg-surface border border-line text-ink-soft hover:bg-line/20'
+                                }`}
+                              >
+                                All Releases
+                              </button>
+                              {[1, 2, 3].map((ph) => (
+                                <button
+                                  key={ph}
+                                  onClick={() => setSelectedPhase(ph)}
+                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                                    selectedPhase === ph
+                                      ? 'bg-ink text-white shadow-xs'
+                                      : 'bg-surface border border-line text-ink-soft hover:bg-line/20'
+                                  }`}
+                                >
+                                  <span className={`w-1.5 h-1.5 rounded-full ${ph === 1 ? 'bg-coral' : ph === 2 ? 'bg-amber' : 'bg-purple'}`} />
+                                  Phase {ph}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Legend & release grid */}
+                          <div className="flex-1 overflow-y-auto pb-24" id="games_grid_container">
+                            
+                            {/* Vibrant Palette Welcome Banner */}
+                            <div className="p-4 rounded-3xl border-2 mb-3.5 transition-transform shadow-xs" style={{ backgroundColor: '#FFEFEC', borderColor: '#FF6B5D' }} id="welcome_banner">
+                              <h2 className="text-lg font-extrabold mb-1" style={{ color: '#C94A3D' }}>Welcome Back!</h2>
+                              <p className="text-[11px] leading-relaxed font-bold" style={{ color: '#6E6270' }}>
+                                You've unlocked playable phase games. Ready to climb the leaderboard?
+                              </p>
+                            </div>
+
+                            {/* Vibrant Palette Level Tracker */}
+                            <div className="p-4 rounded-3xl bg-surface border border-line mb-4.5 shadow-xs" id="level_tracker_card">
+                              <div className="flex items-center gap-3 mb-2.5">
+                                <div className="w-10 h-10 rounded-full overflow-hidden border-2 flex items-center justify-center bg-line text-lg" style={{ borderColor: '#F5A623' }}>
+                                  {user?.avatar || '🐙'}
+                                </div>
+                                <div>
+                                  <p className="font-extrabold text-xs text-ink">{user?.nickname || 'Guest Gamer'}</p>
+                                  <p className="text-[10px] font-bold" style={{ color: '#6E6270' }}>Level 24 Pro Player</p>
+                                </div>
+                              </div>
+                              <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#EDE4DC' }}>
+                                <div className="h-full rounded-full" style={{ width: '75%', backgroundColor: '#F5A623' }} />
+                              </div>
+                              <div className="flex justify-between items-center mt-2">
+                                <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: '#6E6270' }}>750 / 1000 XP to Level 25</p>
+                                <span className="text-[8px] font-black uppercase py-0.5 px-2 rounded-lg text-white" style={{ backgroundColor: '#F5A623' }}>LEVEL UP</span>
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3.5" id="game_cards_grid">
+                              {filteredGames.length > 0 ? (
+                                filteredGames.map((game) => {
+                                  const config = PHASE_COLORS[game.phase] || { bg: 'bg-line/30', text: 'text-ink-soft', border: 'border-line' };
+                                  return (
+                                    <motion.div
+                                      key={game.id}
+                                      whileTap={{ scale: 0.96 }}
+                                      onClick={() => handleLaunchGame(game)}
+                                      className="bg-surface border border-line hover:border-ink/20 rounded-2xl overflow-hidden cursor-pointer shadow-xs transition-all relative flex flex-col justify-between"
+                                    >
+                                      {/* Top Colored Bar to mark game phase */}
+                                      <div className={`h-1.5 w-full ${game.phase === 1 ? 'bg-coral' : game.phase === 2 ? 'bg-amber' : 'bg-purple'}`} />
+
+                                      <div className="p-3.5 flex-1 flex flex-col justify-between">
+                                        <div className="flex justify-between items-start">
+                                          <div className={`w-10 h-10 rounded-xl ${config.bg} flex items-center justify-center text-xl shadow-xs`}>
+                                            {getGameEmoji(game.id)}
+                                          </div>
+                                          
+                                          <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider ${config.bg} ${config.text} ${config.border}`}>
+                                            P{game.phase}
+                                          </span>
+                                        </div>
+
+                                        <div className="mt-4">
+                                          <h3 className="font-display font-extrabold text-sm text-ink line-clamp-1 leading-none mb-0.5">
+                                            {game.name}
+                                          </h3>
+                                          <p className="text-[9px] font-semibold text-ink-soft leading-tight line-clamp-1">
+                                            {game.playable ? game.meta : 'Phase teaser demo'}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    </motion.div>
+                                  );
+                                })
+                              ) : (
+                                <div className="col-span-2 text-center py-10 space-y-2">
+                                  <span className="text-3xl">🏜️</span>
+                                  <p className="text-xs font-bold text-ink-soft">No matching games found.</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Vibrant Palette Your Stats Section */}
+                            <div className="mt-6 mb-4" id="stats_section">
+                              <h3 className="text-sm font-extrabold mb-3 text-ink">Your Stats</h3>
+                              <div className="grid grid-cols-2 gap-3" id="stats_grid">
+                                <div className="p-4 rounded-3xl bg-surface border border-line flex flex-col justify-between shadow-xs" id="stat_wins">
+                                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: '#6E6270' }}>Total Wins</p>
+                                  <p className="text-xl font-black animate-pulse" style={{ color: '#FF6B5D' }}>{quests.filter((q) => q.done).length * 4 + 12}</p>
+                                </div>
+                                <div className="p-4 rounded-3xl bg-surface border border-line flex flex-col justify-between shadow-xs" id="stat_hours">
+                                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: '#6E6270' }}>Game Hours</p>
+                                  <p className="text-xl font-black" style={{ color: '#F5A623' }}>{(user?.coins ? (user.coins / 35).toFixed(1) : '1.5')}</p>
+                                </div>
+                                <div className="p-4 rounded-3xl bg-surface border border-line flex flex-col justify-between shadow-xs" id="stat_rank">
+                                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: '#6E6270' }}>World Rank</p>
+                                  <p className="text-xl font-black" style={{ color: '#6B4E9E' }}>#1,402</p>
+                                </div>
+                                <div className="p-4 rounded-3xl bg-surface border border-line flex flex-col justify-between shadow-xs" id="stat_collectibles">
+                                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: '#6E6270' }}>Gold Coins</p>
+                                  <p className="text-xl font-black" style={{ color: '#2B1F2E' }}>{user?.coins || 0}</p>
+                                </div>
+                              </div>
+                            </div>
+
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'quests' && (
+                        <div className="flex-1 flex flex-col overflow-hidden pb-24" id="tab_quests_view">
+                          <div className="mb-4">
+                            <h2 className="font-display font-extrabold text-xl text-ink">Quest Coins Center</h2>
+                            <p className="text-xs text-ink-soft">Complete quick tasks in standard games & earn real gold coins.</p>
+                          </div>
+
+                          <div className="space-y-3 overflow-y-auto flex-1 pb-4" id="quests_list">
+                            {quests.map((q) => (
+                              <div 
+                                key={q.id}
+                                className={`p-4 rounded-2xl border-2 flex items-center justify-between gap-4 transition-all ${
+                                  q.done 
+                                    ? 'bg-success/5 border-success/30 opacity-70' 
+                                    : 'bg-surface border-line'
+                                }`}
+                              >
+                                <div className="space-y-1">
+                                  <h4 className={`text-xs font-extrabold ${q.done ? 'text-success line-through' : 'text-ink'}`}>
+                                    {q.title}
+                                  </h4>
+                                  <p className="text-[10px] font-semibold text-ink-soft leading-tight">{q.desc}</p>
+                                  <p className="text-[9px] font-black text-amber mt-1">🪙 +{q.reward} Gold</p>
+                                </div>
+
+                                <div className="flex items-center">
+                                  {q.done ? (
+                                    <div className="w-7 h-7 rounded-full bg-success/15 flex items-center justify-center text-success">
+                                      <Check className="w-4 h-4 stroke-[3]" />
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => {
+                                        playSound('tap', user.soundEnabled);
+                                        // Auto claim quest if it's high score and achieved
+                                        if (q.id === 'play_game') {
+                                          completeQuest('play_game');
+                                        } else {
+                                          alert(`Launch a game and complete its objective to unlock this reward!`);
+                                        }
+                                      }}
+                                      className="text-[10px] font-black bg-coral text-white px-2.5 py-1.5 rounded-lg uppercase tracking-wider hover:bg-coral-dark"
+                                    >
+                                      Claim
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {activeTab === 'settings' && (
+                        <div className="flex-1 flex flex-col overflow-hidden pb-24" id="tab_settings_view">
+                          <div className="mb-4">
+                            <h2 className="font-display font-extrabold text-xl text-ink">Gamer Settings</h2>
+                            <p className="text-xs text-ink-soft">Adjust audio preferences, customize accents, or reset scores.</p>
+                          </div>
+
+                          <div className="space-y-4 overflow-y-auto flex-1 pb-4" id="settings_container">
+                            
+                            {/* Sound & Haptics toggle card */}
+                            <div className="bg-surface border border-line rounded-2xl p-4 space-y-3.5 shadow-xs">
+                              <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider">Device Toggles</h4>
+                              
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="text-xs font-bold text-ink">Sound FX Synth</p>
+                                  <p className="text-[9px] font-semibold text-ink-soft">Procedural game melody generator</p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const next = { ...user, soundEnabled: !user.soundEnabled };
+                                    saveProgress(next);
+                                    playSound('tap', next.soundEnabled);
+                                  }}
+                                  className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer ${user.soundEnabled ? 'bg-success' : 'bg-line'}`}
+                                >
+                                  <div className={`w-5.5 h-5.5 rounded-full bg-white absolute top-0.5 transition-transform ${user.soundEnabled ? 'right-0.5' : 'left-0.5'}`} />
+                                </button>
+                              </div>
+
+                              <div className="flex items-center justify-between border-t border-line/40 pt-3">
+                                <div>
+                                  <p className="text-xs font-bold text-ink">Haptic Vibration</p>
+                                  <p className="text-[9px] font-semibold text-ink-soft">Tactile web-vibration response</p>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const next = { ...user, hapticEnabled: !user.hapticEnabled };
+                                    saveProgress(next);
+                                    triggerHaptic(20, next.hapticEnabled);
+                                  }}
+                                  className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer ${user.hapticEnabled ? 'bg-success' : 'bg-line'}`}
+                                >
+                                  <div className={`w-5.5 h-5.5 rounded-full bg-white absolute top-0.5 transition-transform ${user.hapticEnabled ? 'right-0.5' : 'left-0.5'}`} />
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Profile customizer card */}
+                            <div className="bg-surface border border-line rounded-2xl p-4 space-y-3 shadow-xs">
+                              <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider">Mascot Settings</h4>
+                              
+                              <div className="flex gap-2 items-center">
+                                <label className="text-xs font-bold text-ink">Nickname:</label>
+                                <input
+                                  type="text"
+                                  maxLength={12}
+                                  value={user.nickname}
+                                  onChange={(e) => {
+                                    const next = { ...user, nickname: e.target.value };
+                                    saveProgress(next);
+                                  }}
+                                  className="flex-1 bg-bg border border-line focus:border-coral rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none"
+                                />
+                              </div>
+
+                              <div className="space-y-1">
+                                <p className="text-[10px] font-bold text-ink-soft">Select Mascot Avatar:</p>
+                                <div className="flex gap-1.5 overflow-x-auto py-1">
+                                  {AVATARS.map((av) => (
+                                    <button
+                                      key={av}
+                                      onClick={() => {
+                                        playSound('tap', user.soundEnabled);
+                                        const next = { ...user, avatar: av };
+                                        saveProgress(next);
+                                      }}
+                                      className={`w-10 h-10 rounded-xl border flex items-center justify-center text-xl transition-all shrink-0 cursor-pointer ${
+                                        user.avatar === av 
+                                          ? 'bg-coral/10 border-coral ring-2 ring-coral/20' 
+                                          : 'bg-bg border-line'
+                                      }`}
+                                    >
+                                      {av}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Reset state card */}
+                            <button
+                              onClick={resetProgress}
+                              className="w-full bg-coral/10 border border-coral/30 hover:bg-coral/20 text-coral font-display font-extrabold text-xs py-3.5 rounded-2xl transition-colors cursor-pointer"
+                            >
+                              Reset Gamer Progress
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Floating Bottom Nav Rail bar */}
+                      <div className="absolute bottom-5 left-5 right-5 h-16 bg-[#2B1F2E] border border-line/10 rounded-3xl p-2.5 flex justify-between items-center shadow-lg z-30" id="bottom_navbar">
+                        <button
+                          onClick={() => {
+                            playSound('tap', user.soundEnabled);
+                            setActiveTab('arcade');
+                          }}
+                          className={`flex-1 flex flex-col items-center justify-center gap-1.5 cursor-pointer rounded-2xl transition-colors py-1 ${
+                            activeTab === 'arcade' ? 'text-white font-extrabold bg-coral/10' : 'text-white/50 hover:text-white/70'
+                          }`}
+                        >
+                          <Gamepad2 className="w-5 h-5" />
+                          <span className="text-[8px] uppercase tracking-wider leading-none">Arcade</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            playSound('tap', user.soundEnabled);
+                            setActiveTab('quests');
+                          }}
+                          className={`flex-1 flex flex-col items-center justify-center gap-1.5 cursor-pointer rounded-2xl transition-colors py-1 ${
+                            activeTab === 'quests' ? 'text-white font-extrabold bg-coral/10' : 'text-white/50 hover:text-white/70'
+                          }`}
+                        >
+                          <Trophy className="w-5 h-5" />
+                          <span className="text-[8px] uppercase tracking-wider leading-none">Quests</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            playSound('tap', user.soundEnabled);
+                            setActiveTab('settings');
+                          }}
+                          className={`flex-1 flex flex-col items-center justify-center gap-1.5 cursor-pointer rounded-2xl transition-colors py-1 ${
+                            activeTab === 'settings' ? 'text-white font-extrabold bg-coral/10' : 'text-white/50 hover:text-white/70'
+                          }`}
+                        >
+                          <Settings className="w-5 h-5" />
+                          <span className="text-[8px] uppercase tracking-wider leading-none">Settings</span>
+                        </button>
+                      </div>
+
+                    </div>
+                  )}
+
+                  {activeScreen === 'ttt' && (
+                    <TicTacToe
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'g2048' && (
+                    <Game2048
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                      highScore={user.highScores?.g2048 || 0}
+                      onUpdateHighScore={handleUpdateHighScore}
+                    />
+                  )}
+
+                  {activeScreen === 'rps' && (
+                    <RockPaperScissors
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'teaser' && selectedTeaserGame && (
+                    <GameTeaser
+                      game={selectedTeaserGame}
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={(amount) => {
+                        handleAddCoins(amount);
+                        completeQuest('spin_wheel');
+                      }}
+                    />
+                  )}
+
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Apple/Android Virtual Home Gesture Bar inside Simulator */}
+        <div className="h-6 bg-bg flex items-center justify-center pb-2 select-none pointer-events-none" id="simulator_home_bar">
+          <div className="w-32 h-1 bg-ink/30 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}

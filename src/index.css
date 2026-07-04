@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Baloo 2", sans-serif;
+  
+  --color-bg: #FBF6F1;
+  --color-surface: #FFFFFF;
+  --color-coral: #FF6B5D;
+  --color-coral-dark: #C94A3D;
+  --color-amber: #F5A623;
+  --color-amber-dark: #B5760A;
+  --color-purple: #6B4E9E;
+  --color-purple-dark: #4A3670;
+  --color-ink: #2B1F2E;
+  --color-ink-soft: #6E6270;
+  --color-line: #EDE4DC;
+  --color-success: #4E9E6B;
+}
+
+/* Custom global styles for mobile app feeling */
+body {
+  background-color: #2B1F2E; /* Background of screen outside phone frame */
+  color: #2B1F2E;
+  overflow-x: hidden;
+}
+
+/* Scrollbar customizations */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #EDE4DC;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #6E6270;
+}

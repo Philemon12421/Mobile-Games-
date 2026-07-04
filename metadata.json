@@ -1,0 +1,6 @@
+{
+  "name": "OceanGames",
+  "description": "A premium mobile-inspired gaming hub with an immersive onboarding, sleek animations, and responsive classic games.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
