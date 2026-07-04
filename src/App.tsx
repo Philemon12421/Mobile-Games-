@@ -109,27 +109,33 @@ export default function App() {
 
   // Add coins helper (adds a pleasant visual increment)
   const handleAddCoins = (amount: number) => {
-    if (!user) return;
-    const nextCoins = user.coins + amount;
-    const nextUser = { ...user, coins: nextCoins };
-    saveProgress(nextUser);
+    setTimeout(() => {
+      setUser((currentUser) => {
+        if (!currentUser) return currentUser;
+        const nextCoins = currentUser.coins + amount;
+        const nextUser = { ...currentUser, coins: nextCoins };
+        localStorage.setItem('ocean_games_user', JSON.stringify(nextUser));
+        return nextUser;
+      });
+    }, 0);
   };
 
   // Update 2048 High Score helper
   const handleUpdateHighScore = (score: number) => {
-    if (!user) return;
-    const nextUser = {
-      ...user,
-      highScores: {
-        ...user.highScores,
-        g2048: score
-      }
-    };
-    saveProgress(nextUser);
-
-    if (score >= 100) {
-      completeQuest('high_score');
-    }
+    setTimeout(() => {
+      setUser((currentUser) => {
+        if (!currentUser) return currentUser;
+        const nextUser = {
+          ...currentUser,
+          highScores: {
+            ...currentUser.highScores,
+            g2048: score
+          }
+        };
+        localStorage.setItem('ocean_games_user', JSON.stringify(nextUser));
+        return nextUser;
+      });
+    }, 0);
   };
 
   // Trigger achievement complete

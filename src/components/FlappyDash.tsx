@@ -75,6 +75,31 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
     setVelocity(-2.8); // jump impulse
   };
 
+  // Keep values in ref to avoid stale closure issues in game loop tick()
+  const stateRef = useRef({
+    isPlaying,
+    gameOver,
+    birdY,
+    velocity,
+    score,
+    highScore,
+    level,
+    obstacles,
+  });
+
+  useEffect(() => {
+    stateRef.current = {
+      isPlaying,
+      gameOver,
+      birdY,
+      velocity,
+      score,
+      highScore,
+      level,
+      obstacles,
+    };
+  }, [isPlaying, gameOver, birdY, velocity, score, highScore, level, obstacles]);
+
   // Game Loop
   useEffect(() => {
     if (!isPlaying || gameOver) return;
@@ -82,106 +107,111 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
     let obstacleTimer = 0;
 
     const tick = () => {
-      // 1. Apply gravity to bird
-      setBirdY((prevY) => {
-        const nextY = prevY + velocity;
-        if (nextY <= 0 || nextY >= 100) {
-          // Crashed top or bottom
-          setGameOver(true);
-          setIsPlaying(false);
-          playSound('lose', userProgress.soundEnabled);
-          triggerHaptic(50, userProgress.hapticEnabled);
-          return prevY;
-        }
-        return nextY;
-      });
+      const current = stateRef.current;
+      if (!current.isPlaying || current.gameOver) return;
 
-      // Increase velocity downwards
-      setVelocity((v) => v + getGravity());
+      // 1. Calculate next bird Y and velocity
+      let nextBirdY = current.birdY + current.velocity;
+      let nextVelocity = current.velocity + getGravity();
+
+      if (nextBirdY <= 0 || nextBirdY >= 100) {
+        // Crashed top or bottom
+        setGameOver(true);
+        setIsPlaying(false);
+        playSound('lose', userProgress.soundEnabled);
+        triggerHaptic(50, userProgress.hapticEnabled);
+        return;
+      }
 
       // 2. Spawn and move obstacles
-      setObstacles((prevList) => {
-        // Move obstacles
-        let updatedList = prevList.map((ob) => ({
-          ...ob,
-          x: ob.x - getSpeed(),
-        }));
+      let updatedList = current.obstacles.map((ob) => ({
+        ...ob,
+        x: ob.x - getSpeed(),
+      }));
 
-        // Remove off-screen obstacles
-        updatedList = updatedList.filter((ob) => ob.x > -15);
+      // Remove off-screen obstacles
+      updatedList = updatedList.filter((ob) => ob.x > -15);
 
-        // Spawn new obstacle
-        obstacleTimer += 1;
-        // Interval depends on speed
-        const spawnInterval = Math.max(45, 90 - Math.floor(level / 200));
-        if (obstacleTimer >= spawnInterval || prevList.length === 0) {
-          obstacleTimer = 0;
-          const gap = getGapSize();
-          const minHeight = 15;
-          const maxHeight = 100 - gap - minHeight;
-          const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
-          const bottomHeight = 100 - topHeight - gap;
+      // Spawn new obstacle
+      obstacleTimer += 1;
+      // Interval depends on speed
+      const spawnInterval = Math.max(45, 90 - Math.floor(current.level / 200));
+      if (obstacleTimer >= spawnInterval || current.obstacles.length === 0) {
+        obstacleTimer = 0;
+        const gap = getGapSize();
+        const minHeight = 15;
+        const maxHeight = 100 - gap - minHeight;
+        const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
+        const bottomHeight = 100 - topHeight - gap;
 
-          updatedList.push({
-            x: 100,
-            topHeight,
-            bottomHeight,
-            passed: false,
-          });
-        }
-
-        // Check for passes & score increment
-        updatedList.forEach((ob) => {
-          if (ob.x < 25 && !ob.passed) {
-            ob.passed = true;
-            setScore((prevScore) => {
-              const scoreGain = 1 + Math.floor(level / 500);
-              const nextScore = prevScore + scoreGain;
-              
-              if (nextScore > highScore) {
-                setHighScore(nextScore);
-                localStorage.setItem('ocean_flappy_highscore', nextScore.toString());
-              }
-
-              // Give Coins on score milestone
-              const coinsToAward = 3 + Math.floor(level / 1000);
-              setEarnedCoins(c => c + coinsToAward);
-              onAddCoins(coinsToAward);
-
-              // Auto-level up speed
-              if (level < 10000) {
-                setLevel((prevLvl) => Math.min(10000, prevLvl + 80));
-              }
-
-              playSound('win', userProgress.soundEnabled);
-              triggerHaptic(20, userProgress.hapticEnabled);
-              return nextScore;
-            });
-          }
+        updatedList.push({
+          x: 100,
+          topHeight,
+          bottomHeight,
+          passed: false,
         });
+      }
 
-        // 3. Collision checks (bird is physically placed at constant x=25%)
-        const birdX = 25;
-        const collided = updatedList.some((ob) => {
-          // Obstacle width is 12% of screen
-          if (ob.x < birdX + 4 && ob.x + 12 > birdX - 4) {
-            // Check y bounds
-            const isCollidingTop = birdY < ob.topHeight;
-            const isCollidingBottom = birdY > (100 - ob.bottomHeight);
-            return isCollidingTop || isCollidingBottom;
-          }
-          return false;
-        });
+      // Check for passes & score increment
+      let scoreGainTotal = 0;
+      let coinsToAwardTotal = 0;
+      let hasPassed = false;
+      updatedList.forEach((ob) => {
+        if (ob.x < 25 && !ob.passed) {
+          ob.passed = true;
+          hasPassed = true;
+          const scoreGain = 1 + Math.floor(current.level / 500);
+          scoreGainTotal += scoreGain;
 
-        if (collided) {
-          setGameOver(true);
-          setIsPlaying(false);
-          playSound('lose', userProgress.soundEnabled);
-          triggerHaptic(50, userProgress.hapticEnabled);
+          const coinsToAward = 3 + Math.floor(current.level / 1000);
+          coinsToAwardTotal += coinsToAward;
         }
-
-        return updatedList;
       });
+
+      // 3. Collision checks (bird is physically placed at constant x=25%)
+      const birdX = 25;
+      const collided = updatedList.some((ob) => {
+        // Obstacle width is 12% of screen
+        if (ob.x < birdX + 4 && ob.x + 12 > birdX - 4) {
+          // Check y bounds
+          const isCollidingTop = nextBirdY < ob.topHeight;
+          const isCollidingBottom = nextBirdY > (100 - ob.bottomHeight);
+          return isCollidingTop || isCollidingBottom;
+        }
+        return false;
+      });
+
+      if (collided) {
+        setGameOver(true);
+        setIsPlaying(false);
+        playSound('lose', userProgress.soundEnabled);
+        triggerHaptic(50, userProgress.hapticEnabled);
+        return;
+      }
+
+      // Apply changes synchronously in one frame
+      setBirdY(nextBirdY);
+      setVelocity(nextVelocity);
+      setObstacles(updatedList);
+
+      if (hasPassed) {
+        const nextScore = current.score + scoreGainTotal;
+        setScore(nextScore);
+        if (nextScore > current.highScore) {
+          setHighScore(nextScore);
+          localStorage.setItem('ocean_flappy_highscore', nextScore.toString());
+        }
+
+        setEarnedCoins((c) => c + coinsToAwardTotal);
+        onAddCoins(coinsToAwardTotal);
+
+        if (current.level < 10000) {
+          setLevel((prevLvl) => Math.min(10000, prevLvl + 80));
+        }
+
+        playSound('win', userProgress.soundEnabled);
+        triggerHaptic(20, userProgress.hapticEnabled);
+      }
 
       gameLoopRef.current = requestAnimationFrame(tick);
     };
@@ -190,7 +220,7 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
     return () => {
       if (gameLoopRef.current) cancelAnimationFrame(gameLoopRef.current);
     };
-  }, [isPlaying, gameOver, birdY, velocity, level]);
+  }, [isPlaying, gameOver]);
 
   const handleLevelSlider = (val: number) => {
     playSound('tap', userProgress.soundEnabled);
