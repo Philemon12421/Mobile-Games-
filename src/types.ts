@@ -6,6 +6,8 @@ export interface Game {
   desc: string;
   playable: boolean;
   costToUnlock?: number;
+  plays?: number;
+  releaseDate?: string;
 }
 
 export interface UserProgress {

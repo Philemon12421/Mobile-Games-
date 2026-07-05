@@ -22,23 +22,25 @@ import MarineCheckers from './components/MarineCheckers';
 import MemoryMatch from './components/MemoryMatch';
 import EndlessRunner from './components/EndlessRunner';
 import ConnectFour from './components/ConnectFour';
+import AirplaneShooter from './components/AirplaneShooter';
 import { playSound, triggerHaptic } from './utils/audio';
 
 const GAMES: Game[] = [
-  { id: 'ttt', name: 'Tic-Tac-Toe', phase: 1, meta: 'Playable now', desc: 'Classic 3x3 grid vs a smart defensive AI.', playable: true },
-  { id: 'g2048', name: '2048 Sliders', phase: 1, meta: 'Playable now', desc: 'Slide and merge tiles to reach the glorious 2048.', playable: true },
-  { id: 'rps', name: 'Rock Paper Scissors', phase: 1, meta: 'Playable now', desc: 'Best of five rounds against the Deep Sea Octopus.', playable: true },
-  { id: 'memory', name: 'Memory Match', phase: 1, meta: 'Playable now', desc: 'Flip underwater tiles, find every matching pair.', playable: true },
-  { id: 'whack', name: 'Whack-a-Mole', phase: 1, meta: 'Playable now', desc: 'Tap rapid moles before they submerge back down.', playable: true },
-  { id: 'flappy', name: 'Flappy Dash', phase: 2, meta: 'Playable now', desc: 'Tap to glide between gaps in the deep coral reefs.', playable: true },
-  { id: 'stack', name: 'Stack Tower', phase: 2, meta: 'Playable now', desc: 'Time your drop to stack blocks perfectly into the sky.', playable: true },
-  { id: 'snake', name: 'Ocean Snake', phase: 2, meta: 'Playable now', desc: 'Grow your trail without doubling back or hitting reefs.', playable: true },
-  { id: 'runner', name: 'Endless Runner', phase: 2, meta: 'Playable now', desc: 'Jump over anchors as the speed keeps climbing.', playable: true },
-  { id: 'shooter', name: 'Sky Shooter', phase: 2, meta: 'Playable now', desc: 'Tap to fire bubble torpedos at targets.', playable: true },
-  { id: 'sudoku', name: 'Deep Sudoku', phase: 3, meta: 'Playable now', desc: 'Fill the grid, one logical step at a time.', playable: true },
-  { id: 'c4', name: 'Connect Four', phase: 3, meta: 'Playable now', desc: 'Match four colored shells in a row to defeat the AI.', playable: true },
-  { id: 'checkers', name: 'Marine Checkers', phase: 3, meta: 'Playable now', desc: 'Classic checker board strategy, jump and capture.', playable: true },
-  { id: 'pool', name: 'Pocket Pool', phase: 3, meta: 'Playable now', desc: 'Line up shots, bounce shells, sink every ball.', playable: true },
+  { id: 'ttt', name: 'Tic-Tac-Toe', phase: 1, meta: 'Playable now', desc: 'Classic 3x3 grid vs a smart defensive AI.', playable: true, plays: 340, releaseDate: '2025-06-01' },
+  { id: 'g2048', name: '2048 Sliders', phase: 1, meta: 'Playable now', desc: 'Slide and merge tiles to reach the glorious 2048.', playable: true, plays: 520, releaseDate: '2025-07-12' },
+  { id: 'rps', name: 'Rock Paper Scissors', phase: 1, meta: 'Playable now', desc: 'Best of five rounds against the Deep Sea Octopus.', playable: true, plays: 180, releaseDate: '2025-08-05' },
+  { id: 'memory', name: 'Memory Match', phase: 1, meta: 'Playable now', desc: 'Flip underwater tiles, find every matching pair.', playable: true, plays: 210, releaseDate: '2025-09-20' },
+  { id: 'whack', name: 'Whack-a-Mole', phase: 1, meta: 'Playable now', desc: 'Tap rapid moles before they submerge back down.', playable: true, plays: 290, releaseDate: '2025-10-15' },
+  { id: 'flappy', name: 'Flappy Dash', phase: 2, meta: 'Playable now', desc: 'Tap to glide between gaps in the deep coral reefs.', playable: true, plays: 460, releaseDate: '2025-11-30' },
+  { id: 'stack', name: 'Stack Tower', phase: 2, meta: 'Playable now', desc: 'Time your drop to stack blocks perfectly into the sky.', playable: true, plays: 150, releaseDate: '2025-12-25' },
+  { id: 'snake', name: 'Ocean Snake', phase: 2, meta: 'Playable now', desc: 'Grow your trail without doubling back or hitting reefs.', playable: true, plays: 380, releaseDate: '2026-02-10' },
+  { id: 'runner', name: 'Endless Runner', phase: 2, meta: 'Playable now', desc: 'Jump over anchors as the speed keeps climbing.', playable: true, plays: 230, releaseDate: '2026-03-05' },
+  { id: 'shooter', name: 'Sky Shooter', phase: 2, meta: 'Playable now', desc: 'Tap to fire bubble torpedos at targets.', playable: true, plays: 190, releaseDate: '2026-04-18' },
+  { id: 'air', name: 'Air Strike 1945', phase: 2, meta: 'Playable now', desc: 'Command a fighter plane to dogfight falling alien invaders.', playable: true, plays: 120, releaseDate: '2026-07-05' },
+  { id: 'sudoku', name: 'Deep Sudoku', phase: 3, meta: 'Playable now', desc: 'Fill the grid, one logical step at a time.', playable: true, plays: 110, releaseDate: '2026-05-12' },
+  { id: 'c4', name: 'Connect Four', phase: 3, meta: 'Playable now', desc: 'Match four colored shells in a row to defeat the AI.', playable: true, plays: 80, releaseDate: '2026-06-01' },
+  { id: 'checkers', name: 'Marine Checkers', phase: 3, meta: 'Playable now', desc: 'Classic checker board strategy, jump and capture.', playable: true, plays: 65, releaseDate: '2026-06-20' },
+  { id: 'pool', name: 'Pocket Pool', phase: 3, meta: 'Playable now', desc: 'Line up shots, bounce shells, sink every ball.', playable: true, plays: 140, releaseDate: '2026-07-01' },
 ];
 
 const PHASE_COLORS: Record<number, { bg: string; text: string; border: string }> = {
@@ -51,13 +53,49 @@ const AVATARS = ['🐙', '🐳', '🐢', '🦈', '🦀', '🦑', '🐠', '🐚',
 
 export default function App() {
   const [user, setUser] = useState<UserProgress | null>(null);
-  const [activeScreen, setActiveScreen] = useState<'hub' | 'ttt' | 'g2048' | 'rps' | 'teaser' | 'snake' | 'flappy' | 'whack' | 'stack' | 'shooter' | 'sudoku' | 'pool' | 'checkers' | 'memory' | 'runner' | 'c4'>('hub');
+  const [activeScreen, setActiveScreen] = useState<'hub' | 'ttt' | 'g2048' | 'rps' | 'teaser' | 'snake' | 'flappy' | 'whack' | 'stack' | 'shooter' | 'sudoku' | 'pool' | 'checkers' | 'memory' | 'runner' | 'c4' | 'air'>('hub');
   const [selectedTeaserGame, setSelectedTeaserGame] = useState<Game | null>(null);
   const [activeTab, setActiveTab] = useState<'arcade' | 'quests' | 'settings'>('arcade');
 
   // Search and Category filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPhase, setSelectedPhase] = useState<number | 'all'>('all');
+
+  // Sort By state ('name' | 'played' | 'newest')
+  const [sortBy, setSortBy] = useState<'name' | 'played' | 'newest'>('name');
+
+  // Track dynamic plays per game to support live sorting by 'played'
+  const [gamePlays, setGamePlays] = useState<Record<string, number>>(() => {
+    const initial: Record<string, number> = {};
+    GAMES.forEach((g) => {
+      initial[g.id] = g.plays ?? 0;
+    });
+    const saved = localStorage.getItem('ocean_games_playcounts');
+    if (saved) {
+      try {
+        return { ...initial, ...JSON.parse(saved) };
+      } catch {
+        return initial;
+      }
+    }
+    return initial;
+  });
+
+  // Quest Completed Toasts state
+  interface QuestToast {
+    id: string;
+    title: string;
+    reward: number;
+  }
+  const [toasts, setToasts] = useState<QuestToast[]>([]);
+
+  const addQuestToast = (title: string, reward: number) => {
+    const id = Date.now().toString() + Math.random().toString();
+    setToasts((prev) => [...prev, { id, title, reward }]);
+    setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 4000);
+  };
 
   // Time state for mobile status bar
   const [timeStr, setTimeStr] = useState('12:00');
@@ -67,6 +105,7 @@ export default function App() {
     { id: 'play_game', title: 'Explore Any Game', desc: 'Launch a game or teaser from the console', reward: 20, done: false },
     { id: 'high_score', title: 'Earn High Score', desc: 'Reach 100+ score in 2048 Sliders', reward: 50, done: false },
     { id: 'win_ttt', title: 'Victory Standard', desc: 'Outsmart the AI in Tic-Tac-Toe', reward: 35, done: false },
+    { id: 'air_combat', title: 'Sky Guardian', desc: 'Launch the new Air Strike 1945 fighter jet', reward: 40, done: false },
     { id: 'spin_wheel', title: 'Gamer Fortune', desc: 'Spin the release wheel in any preview', reward: 15, done: false },
   ]);
 
@@ -146,6 +185,8 @@ export default function App() {
           playSound('win', user?.soundEnabled);
           triggerHaptic(30, user?.hapticEnabled);
           handleAddCoins(q.reward);
+          // Show Toast notification popup!
+          addQuestToast(q.title, q.reward);
           return { ...q, done: true };
         }
         return q;
@@ -157,10 +198,16 @@ export default function App() {
   const resetProgress = () => {
     if (confirm('Are you sure you want to reset your gamer profile and scores?')) {
       localStorage.removeItem('ocean_games_user');
+      localStorage.removeItem('ocean_games_playcounts');
       setUser(null);
       setActiveScreen('hub');
       setActiveTab('arcade');
       setQuests((prev) => prev.map((q) => ({ ...q, done: false })));
+      const initial: Record<string, number> = {};
+      GAMES.forEach((g) => {
+        initial[g.id] = g.plays ?? 0;
+      });
+      setGamePlays(initial);
     }
   };
 
@@ -169,6 +216,15 @@ export default function App() {
     triggerHaptic(15, user?.hapticEnabled);
 
     completeQuest('play_game');
+    if (game.id === 'air') {
+      completeQuest('air_combat');
+    }
+
+    setGamePlays((prev) => {
+      const next = { ...prev, [game.id]: (prev[game.id] || 0) + 1 };
+      localStorage.setItem('ocean_games_playcounts', JSON.stringify(next));
+      return next;
+    });
 
     if (game.playable) {
       setActiveScreen(game.id as any);
@@ -191,6 +247,7 @@ export default function App() {
       snake: '🐍',
       runner: '🏃',
       shooter: '🚀',
+      air: '🛩️',
       sudoku: '🔢',
       c4: '🔵',
       checkers: '🏁',
@@ -199,12 +256,25 @@ export default function App() {
     return emojis[id] || '🎮';
   };
 
-  // Filters calculation
+  // Filters calculation and sorting
   const filteredGames = GAMES.filter((game) => {
     const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           game.desc.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPhase = selectedPhase === 'all' || game.phase === selectedPhase;
     return matchesSearch && matchesPhase;
+  }).sort((a, b) => {
+    if (sortBy === 'name') {
+      return a.name.localeCompare(b.name);
+    } else if (sortBy === 'played') {
+      const playsA = gamePlays[a.id] ?? 0;
+      const playsB = gamePlays[b.id] ?? 0;
+      return playsB - playsA;
+    } else if (sortBy === 'newest') {
+      const dateA = a.releaseDate ?? '';
+      const dateB = b.releaseDate ?? '';
+      return dateB.localeCompare(dateA);
+    }
+    return 0;
   });
 
   // Current theme tint
@@ -246,6 +316,35 @@ export default function App() {
 
         {/* Content Router */}
         <div className="flex-1 overflow-hidden relative bg-bg flex flex-col" id="app_main_content">
+          {/* Quest Completed Toasts Portal */}
+          <div className="absolute top-4 left-4 right-4 z-[99] pointer-events-none space-y-2" id="toast_container">
+            <AnimatePresence>
+              {toasts.map((toast) => (
+                <motion.div
+                  key={toast.id}
+                  initial={{ opacity: 0, y: -20, scale: 0.9 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.9 }}
+                  className="w-full bg-slate-900 border-2 border-amber/40 rounded-2xl p-3 shadow-lg flex items-center justify-between gap-3 pointer-events-auto backdrop-blur-md"
+                  id={`toast_${toast.id}`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-amber/10 flex items-center justify-center text-lg shrink-0">
+                      🏆
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-amber-400">Quest Completed</p>
+                      <p className="text-xs font-bold text-white leading-tight mt-0.5">{toast.title}</p>
+                    </div>
+                  </div>
+                  <div className="bg-amber text-slate-950 font-sans font-black text-[10px] px-2 py-1 rounded-lg shrink-0 flex items-center gap-0.5 shadow-xs">
+                    🪙+{toast.reward}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+
           <AnimatePresence mode="wait">
             {!user ? (
               <motion.div 
@@ -299,15 +398,35 @@ export default function App() {
                           
                           {/* Search bar & filters panel */}
                           <div className="space-y-2.5 mb-4" id="search_and_filters">
-                            <div className="relative">
-                              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft/50" />
-                              <input
-                                type="text"
-                                placeholder="Search games..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full bg-surface border border-line focus:border-coral rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none placeholder:text-ink-soft/40 transition-colors"
-                              />
+                            <div className="flex gap-2 items-center" id="search_sort_container">
+                              <div className="relative flex-1">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft/50" />
+                                <input
+                                  type="text"
+                                  placeholder="Search games..."
+                                  value={searchQuery}
+                                  onChange={(e) => setSearchQuery(e.target.value)}
+                                  className="w-full bg-surface border border-line focus:border-coral rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none placeholder:text-ink-soft/40 transition-colors text-ink"
+                                />
+                              </div>
+                              
+                              {/* Elegant Sort Dropdown */}
+                              <div className="relative shrink-0">
+                                <select
+                                  value={sortBy}
+                                  onChange={(e) => {
+                                    playSound('tap', user?.soundEnabled);
+                                    setSortBy(e.target.value as any);
+                                  }}
+                                  className="bg-surface border border-line focus:border-coral text-[11px] font-extrabold rounded-2xl px-3.5 py-2.5 outline-none cursor-pointer text-ink appearance-none pr-7 shadow-xs relative"
+                                  id="sort_by_dropdown"
+                                >
+                                  <option value="name">A-Z</option>
+                                  <option value="played">Most Played</option>
+                                  <option value="newest">Newest</option>
+                                </select>
+                                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-ink-soft/60 font-sans text-[9px]">▼</span>
+                              </div>
                             </div>
 
                             {/* Phase filter category tabs */}
@@ -788,6 +907,17 @@ export default function App() {
 
                   {activeScreen === 'c4' && (
                     <ConnectFour
+                      onBack={() => {
+                        playSound('tap', user.soundEnabled);
+                        setActiveScreen('hub');
+                      }}
+                      userProgress={user}
+                      onAddCoins={handleAddCoins}
+                    />
+                  )}
+
+                  {activeScreen === 'air' && (
+                    <AirplaneShooter
                       onBack={() => {
                         playSound('tap', user.soundEnabled);
                         setActiveScreen('hub');
