@@ -623,6 +623,23 @@ export default function App() {
 
                           <div className="space-y-4 overflow-y-auto flex-1 pb-4" id="settings_container">
                             
+                            {/* React Native Expo Specs Card */}
+                            <div className="bg-gradient-to-br from-[#1e1b4b]/80 to-[#0f172a]/90 border border-indigo-500/25 rounded-2xl p-4 space-y-2.5 shadow-md text-left" id="expo_specs_card">
+                              <div className="flex items-center justify-between">
+                                <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1">📱 Expo Mobile Active</h4>
+                                <span className="bg-indigo-500/10 text-indigo-300 text-[9px] font-black px-1.5 py-0.5 rounded border border-indigo-500/30">SDK 51</span>
+                              </div>
+                              <p className="text-[10px] text-slate-300 leading-normal font-bold">
+                                This dashboard workspace is fully optimized for React Native and Expo Go compatibility.
+                              </p>
+                              <div className="bg-black/40 p-2.5 rounded-xl border border-slate-800/60 font-mono text-[9px] text-indigo-300 space-y-1">
+                                <p className="text-slate-500"># Launch Expo Metro Bundler</p>
+                                <p><span className="text-amber-400">npx</span> expo start</p>
+                                <p className="text-slate-500 mt-1"># Build iOS/Android Binaries</p>
+                                <p><span className="text-amber-400">npx</span> eas build --platform all</p>
+                              </div>
+                            </div>
+
                             {/* Sound & Haptics toggle card */}
                             <div className="bg-surface border border-line rounded-2xl p-4 space-y-3.5 shadow-xs">
                               <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider">Device Toggles</h4>
