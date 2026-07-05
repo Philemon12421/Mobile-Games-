@@ -1,4 +1,4 @@
-# 🌊 OceanGames: Premium Arcade Hub & Campaign 🐠
+# 🌊 OceanGames: Premium Arcade Hub & Campaign 
 
 [![Expo Ready](https://img.shields.io/badge/Expo-Ready-4630EB?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev)
 [![React Native](https://img.shields.io/badge/React_Native-v0.74-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactnative.dev)
