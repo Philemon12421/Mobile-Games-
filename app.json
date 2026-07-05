@@ -1,30 +1,22 @@
 {
   "expo": {
-    "name": "Ocean Games",
+    "name": "OceanGames",
     "slug": "ocean-games",
-    "version": "1.0.0",
-    "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0a1128"
-    },
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.ocean.arcade"
+      "backgroundColor": "#2B1F2E"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0a1128"
+        "backgroundColor": "#2B1F2E"
       },
-      "package": "com.ocean.arcade"
+      "package": "com.drenchtech.oceangames"
     },
-    "web": {
-      "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+    "ios": {
+      "bundleIdentifier": "com.drenchtech.oceangames"
     }
   }
 }
