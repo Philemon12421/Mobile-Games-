@@ -65,6 +65,17 @@ export default function App() {
   // Sort By state ('name' | 'played' | 'newest')
   const [sortBy, setSortBy] = useState<'name' | 'played' | 'newest'>('name');
 
+  // Interactive skeleton screen state for game processing simulation
+  const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
+
+  useEffect(() => {
+    setIsLoadingLibrary(true);
+    const timer = setTimeout(() => {
+      setIsLoadingLibrary(false);
+    }, 450); // Fluid 450ms adaptive skeleton shimmer
+    return () => clearTimeout(timer);
+  }, [searchQuery, selectedPhase, sortBy]);
+
   // Track dynamic plays per game to support live sorting by 'played'
   const [gamePlays, setGamePlays] = useState<Record<string, number>>(() => {
     const initial: Record<string, number> = {};
@@ -491,7 +502,37 @@ export default function App() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-3.5" id="game_cards_grid">
-                              {filteredGames.length > 0 ? (
+                              {isLoadingLibrary ? (
+                                Array.from({ length: 4 }).map((_, idx) => (
+                                  <div
+                                    key={`skeleton_${idx}`}
+                                    className="bg-surface border border-line rounded-3xl overflow-hidden shadow-xs relative flex flex-col justify-between animate-pulse h-[132px]"
+                                  >
+                                    {/* Top Accent Strip Skeleton */}
+                                    <div className="h-1.5 w-full bg-ink-soft/10" />
+
+                                    <div className="p-4 flex-1 flex flex-col justify-between">
+                                      <div className="flex justify-between items-start">
+                                        {/* Icon block skeleton */}
+                                        <div className="w-11 h-11 rounded-2xl bg-ink-soft/10 shadow-inner" />
+                                        {/* Badge skeleton */}
+                                        <div className="w-10 h-4 rounded-full bg-ink-soft/5" />
+                                      </div>
+
+                                      <div className="mt-3.5 space-y-1.5">
+                                        {/* Title skeleton */}
+                                        <div className="h-3.5 w-3/4 rounded-md bg-ink-soft/10" />
+                                        <div className="flex items-center justify-between gap-1.5 mt-1">
+                                          {/* Description skeleton */}
+                                          <div className="h-2.5 w-1/2 rounded bg-ink-soft/5" />
+                                          {/* Playcount skeleton */}
+                                          <div className="h-2.5 w-1/5 rounded bg-ink-soft/5" />
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : filteredGames.length > 0 ? (
                                 filteredGames.map((game) => {
                                   const config = PHASE_COLORS[game.phase] || { bg: 'bg-line/30', text: 'text-ink-soft', border: 'border-line' };
                                   return (
