@@ -4,21 +4,45 @@
 
 ---
 
-## ✨ Highlights & Key Features
+## 🔮 Interactive Live Visualizer & Status
 
-- **Sleek Motion Engine**: Fluid layout transitions, stagger entrances, and haptic-aligned micro-animations powered by `motion` (`motion/react`).
-- **Tactile Physics**: Authentic angle projections, whirlpool gravitational currents, and custom elastic collision engines (featured in *Pocket Pool 3D*).
-- **Campaign Progression**: Earn coin increments, clear challenges, level-up profiles, and unlock progressively advanced game modes.
-- **Unified Dual-Architecture**: Runs natively on the web through a robust Vite dev server and comes pre-configured for mobile platforms with Expo Metro Bundler.
+```
+   ┌────────────────────────────────────────────────────────┐
+   │                  OCEAN ARCADE STATUS                   │
+   ├────────────────────────────────────────────────────────┤
+   │  🔋 EXPO GO SDK 51   |  🚀 VITE BUNDLER  |  💎 TACTILE  │
+   ├────────────────────────────────────────────────────────┤
+   │                                                        │
+   │               🫧     🫧      🫧     🫧                   │
+   │           ┌────────────────────────────┐               │
+   │           │   [ 🛩️ AIR STRIKE 1945 ]    │  👾 DOWN!    │
+   │           │    Score: 1,420            │  💥 +40🪙    │
+   │           └────────────────────────────┘               │
+   │                 ▲                ▲                     │
+   │            [◀ MOVE LEFT]    [MOVE RIGHT▶]              │
+   │                                                        │
+   └────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ✨ Premium Highlights & Key Features
+
+*   **Sleek Motion Engine**: Fluid layout transitions, stagger entrances, and haptic-aligned micro-animations powered by `motion` (`motion/react`).
+*   **Tactile Physics**: Authentic angle projections, whirlpool gravitational currents, and custom elastic collision engines (featured in *Pocket Pool 3D*).
+*   **Quest Completed Toasts**: Experience dynamic alert banners sliding into view instantly whenever a high-score threshold or achievement milestone is unlocked.
+*   **Campaign Progression**: Earn coin increments, clear challenges, level-up profiles, and unlock progressively advanced game modes.
+*   **Unified Dual-Architecture**: Runs natively on the web through a robust Vite dev server and comes pre-configured for mobile platforms with Expo Metro Bundler.
 
 ---
 
 ## 🎮 The Arcade Suite
 
-A collection of 12 fully-featured classic and premium arcade titles integrated into the sea-floor leveling campaign:
+A collection of 15 fully-featured classic and premium arcade titles integrated into the sea-floor leveling campaign:
 
 | Title | Campaign Tier | Gameplay Type | System Mechanics |
 | :--- | :---: | :--- | :--- |
+| **Air Strike 1945** | Tier 2 | Combat Shooter | Bullet speed modifiers, laser shields, dropping nuke power-ups ⚡ |
 | **Pocket Pool 3D** | Tier 3 | Sports Simulation | Cue guides, real-time friction & pocket vortex gravity |
 | **Ocean Snake** | Tier 2 | Grid Reflex | Directional drift, reef boundaries, trailing neon tail algae |
 | **Flappy Dash** | Tier 2 | Physics Tap | Synchronous jump impulses, dynamic coral obstacle corridors |
@@ -66,9 +90,9 @@ npx expo start
 ```
 
 #### Running on Devices:
-- **iOS Simulator**: Press `i` to launch in the simulator.
-- **Android Emulator**: Press `a` to launch in the emulator.
-- **Physical Device**: Install the **Expo Go** application on your device (iOS App Store or Google Play) and scan the QR code printed in the terminal.
+*   **iOS Simulator**: Press `i` to launch in the simulator.
+*   **Android Emulator**: Press `a` to launch in the emulator.
+*   **Physical Device**: Install the **Expo Go** application on your device (iOS App Store or Google Play) and scan the QR code printed in the terminal.
 
 ---
 
@@ -87,15 +111,16 @@ npx expo start
     ├── 📁 utils/
     │   └── 📄 audio.ts     # Synthesized frequency SFX engine and audio toggle
     └── 📁 components/
-        ├── 📄 Onboarding.tsx # Aquatic profile selections and visual setups
-        ├── 📄 PocketPool.tsx # Real-time mathematical pool cue & pocket physics
-        └── ...             # Integrated individual React game components
+        ├── 📄 Onboarding.tsx      # Aquatic profile selections and visual setups
+        ├── 📄 AirplaneShooter.tsx # High-octane vertical military jet shooter
+        ├── 📄 PocketPool.tsx      # Real-time mathematical pool cue & pocket physics
+        └── ...                  # Integrated individual React game components
 ```
 
 ---
 
 ## 📐 Quality Standards & Design Directives
 
-- **Offline-First Storage**: Standard browser profile data and campaign accomplishments are stored via client-side `localStorage`.
-- **Elegant Typography**: Hand-crafted layouts utilizing clean typography elements (Inter/JetBrains Mono for statistics).
-- **Sound Toggle**: Interactive global sound control mechanism which manages synthetic SFX and alerts.
+*   **Offline-First Storage**: Standard browser profile data and campaign accomplishments are stored via client-side `localStorage`.
+*   **Elegant Typography**: Hand-crafted layouts utilizing clean typography elements (Inter/JetBrains Mono for statistics).
+*   **Sound Toggle**: Interactive global sound control mechanism which manages synthetic SFX and alerts.
