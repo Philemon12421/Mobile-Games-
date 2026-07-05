@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Gamepad2, Search, Settings, ShieldCheck, HelpCircle, 
   Sparkles, Volume2, VolumeX, Smartphone, Trophy, Award, 
-  TrendingUp, Compass, Flame, Info, CheckCircle2, ChevronRight, Check
+  TrendingUp, Compass, Flame, Info, CheckCircle2, ChevronRight, Check,
+  Grid3x3, Binary, Scissors, Brain, Hammer, Wind, Layers, Route, Footprints, Rocket, Plane, Hash, Disc, Crown, CircleDot
 } from 'lucide-react';
 import { Game, UserProgress } from './types';
 import Onboarding from './components/Onboarding';
@@ -234,26 +235,26 @@ export default function App() {
     }
   };
 
-  // Custom UI avatar helper
-  const getGameEmoji = (id: string) => {
-    const emojis: Record<string, string> = {
-      ttt: '❌',
-      g2048: '🧩',
-      rps: '✊',
-      memory: '🎴',
-      whack: '🦦',
-      flappy: '🐤',
-      stack: '🧱',
-      snake: '🐍',
-      runner: '🏃',
-      shooter: '🚀',
-      air: '🛩️',
-      sudoku: '🔢',
-      c4: '🔵',
-      checkers: '🏁',
-      pool: '🎱',
+  // Custom UI icon helper mapping to professional Lucide icons
+  const getGameIcon = (id: string, className = "w-6 h-6") => {
+    const icons: Record<string, React.ReactNode> = {
+      ttt: <Grid3x3 className={className} />,
+      g2048: <Binary className={className} />,
+      rps: <Scissors className={className} />,
+      memory: <Brain className={className} />,
+      whack: <Hammer className={className} />,
+      flappy: <Wind className={className} />,
+      stack: <Layers className={className} />,
+      snake: <Route className={className} />,
+      runner: <Footprints className={className} />,
+      shooter: <Rocket className={className} />,
+      air: <Plane className={className} />,
+      sudoku: <Hash className={className} />,
+      c4: <Disc className={className} />,
+      checkers: <Crown className={className} />,
+      pool: <CircleDot className={className} />,
     };
-    return emojis[id] || '🎮';
+    return icons[id] || <Gamepad2 className={className} />;
   };
 
   // Filters calculation and sorting
@@ -496,17 +497,18 @@ export default function App() {
                                   return (
                                     <motion.div
                                       key={game.id}
+                                      whileHover={{ y: -2, boxShadow: '0 4px 12px rgba(43,31,46,0.06)' }}
                                       whileTap={{ scale: 0.96 }}
                                       onClick={() => handleLaunchGame(game)}
-                                      className="bg-surface border border-line hover:border-ink/20 rounded-2xl overflow-hidden cursor-pointer shadow-xs transition-all relative flex flex-col justify-between"
+                                      className="bg-surface border border-line hover:border-coral/40 rounded-3xl overflow-hidden cursor-pointer shadow-xs transition-all relative flex flex-col justify-between"
                                     >
-                                      {/* Top Colored Bar to mark game phase */}
+                                      {/* Top Accent Strip with Brand Colors */}
                                       <div className={`h-1.5 w-full ${game.phase === 1 ? 'bg-coral' : game.phase === 2 ? 'bg-amber' : 'bg-purple'}`} />
 
-                                      <div className="p-3.5 flex-1 flex flex-col justify-between">
+                                      <div className="p-4 flex-1 flex flex-col justify-between">
                                         <div className="flex justify-between items-start">
-                                          <div className={`w-10 h-10 rounded-xl ${config.bg} flex items-center justify-center text-xl shadow-xs`}>
-                                            {getGameEmoji(game.id)}
+                                          <div className={`w-11 h-11 rounded-2xl ${config.bg} flex items-center justify-center shadow-inner`}>
+                                            {getGameIcon(game.id, `w-5.5 h-5.5 ${config.text}`)}
                                           </div>
                                           
                                           <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider ${config.bg} ${config.text} ${config.border}`}>
@@ -515,12 +517,17 @@ export default function App() {
                                         </div>
 
                                         <div className="mt-4">
-                                          <h3 className="font-display font-extrabold text-sm text-ink line-clamp-1 leading-none mb-0.5">
+                                          <h3 className="font-display font-extrabold text-sm text-ink line-clamp-1 leading-none mb-1">
                                             {game.name}
                                           </h3>
-                                          <p className="text-[9px] font-semibold text-ink-soft leading-tight line-clamp-1">
-                                            {game.playable ? game.meta : 'Phase teaser demo'}
-                                          </p>
+                                          <div className="flex items-center justify-between gap-1.5 mt-1">
+                                            <p className="text-[9px] font-bold text-ink-soft/80 leading-tight line-clamp-1">
+                                              {game.playable ? game.meta : 'Phase teaser demo'}
+                                            </p>
+                                            <span className="text-[8px] font-mono font-bold text-ink-soft/50">
+                                              {game.plays ? `${game.plays} plays` : ''}
+                                            </span>
+                                          </div>
                                         </div>
                                       </div>
                                     </motion.div>
