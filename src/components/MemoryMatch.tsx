@@ -43,7 +43,9 @@ export default function MemoryMatch({ onBack, userProgress, onAddCoins }: Memory
   const initGame = () => {
     // 6 pairs or 8 pairs depending on level
     const numPairs = level >= 5000 ? 8 : 6;
-    const pool = ['🐙', '🐳', '🐢', '🦈', '🦀', '🦑', '🐠', '🐚', '🐬', '🐡'].slice(0, numPairs);
+    const userAvatar = userProgress.avatar || '🐢';
+    const uniquePool = Array.from(new Set([userAvatar, '🐙', '🐳', '🐢', '🦈', '🦀', '🦑', '🐠', '🐚', '🐬', '🐡']));
+    const pool = uniquePool.slice(0, numPairs);
     const doublePool = [...pool, ...pool];
 
     // Shuffle pool
@@ -237,13 +239,30 @@ export default function MemoryMatch({ onBack, userProgress, onAddCoins }: Memory
               <div
                 key={card.id}
                 onClick={() => handleCardClick(idx)}
-                className={`flex items-center justify-center aspect-square rounded-2xl border-2 text-2xl font-bold cursor-pointer transition-all duration-300 transform select-none ${
-                  revealed 
-                    ? 'bg-neutral-50 border-[#EDE4DC] rotate-0 scale-100 shadow-inner' 
-                    : 'bg-[#FF6B5D] border-white hover:bg-[#E55A4C] rotate-180 scale-95 shadow-md text-white'
-                }`}
+                className="relative aspect-square cursor-pointer w-full select-none"
+                style={{ perspective: 1000 }}
               >
-                {revealed ? card.emoji : '❓'}
+                <motion.div
+                  animate={{ rotateY: revealed ? 0 : 180 }}
+                  transition={{ duration: 0.4, ease: 'easeInOut' }}
+                  style={{ transformStyle: 'preserve-3d' }}
+                  className="w-full h-full relative"
+                >
+                  {/* Front Side of Card (Revealed) */}
+                  <div
+                    style={{ backfaceVisibility: 'hidden' }}
+                    className="absolute inset-0 bg-neutral-50 border-2 border-[#EDE4DC] rounded-2xl flex items-center justify-center text-3xl shadow-inner"
+                  >
+                    {card.emoji}
+                  </div>
+                  {/* Back Side of Card (Hidden) */}
+                  <div
+                    style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                    className="absolute inset-0 bg-[#FF6B5D] border-2 border-white rounded-2xl flex items-center justify-center text-3xl shadow-md text-white font-black hover:bg-[#E55A4C] transition-colors"
+                  >
+                    ❓
+                  </div>
+                </motion.div>
               </div>
             );
           })}

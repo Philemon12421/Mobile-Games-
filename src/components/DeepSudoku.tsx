@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { playSound, triggerHaptic } from '../utils/audio';
-import { ArrowLeft, RotateCcw, Star, CheckCircle, Eraser } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Trophy, Lock, Eraser, PartyPopper } from 'lucide-react';
 
 interface DeepSudokuProps {
   onBack: () => void;
   userProgress: { nickname: string; avatar: string; themeColor: string; soundEnabled: boolean; hapticEnabled: boolean };
   onAddCoins: (amount: number) => void;
 }
+
+const MAX_LEVEL = 100;
+const LEVEL_KEY = 'ocean_sudoku_level';
 
 const BASE_SEED = [
   1,2,3, 4,5,6, 7,8,9,
@@ -32,24 +35,17 @@ function shuffle<T>(arr: T[]): T[] {
   return a;
 }
 
-// Generates a fresh, genuinely randomized valid Sudoku solution every call.
-// Digit remapping + row/column permutation within bands/stacks (+ optional
-// transpose) all preserve Sudoku validity while producing a different grid.
 function generateRandomSolution(): number[] {
   const digitMap = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
   const remapped = BASE_SEED.map((v) => digitMap[v - 1]);
 
   const bandOrder = shuffle([0, 1, 2]);
   const rowOrder: number[] = [];
-  bandOrder.forEach((band) => {
-    shuffle([0, 1, 2]).forEach((r) => rowOrder.push(band * 3 + r));
-  });
+  bandOrder.forEach((band) => { shuffle([0, 1, 2]).forEach((r) => rowOrder.push(band * 3 + r)); });
 
   const stackOrder = shuffle([0, 1, 2]);
   const colOrder: number[] = [];
-  stackOrder.forEach((stack) => {
-    shuffle([0, 1, 2]).forEach((c) => colOrder.push(stack * 3 + c));
-  });
+  stackOrder.forEach((stack) => { shuffle([0, 1, 2]).forEach((c) => colOrder.push(stack * 3 + c)); });
 
   let result = Array(81).fill(0);
   for (let r = 0; r < 9; r++) {
@@ -74,15 +70,20 @@ export default function DeepSudoku({ onBack, userProgress, onAddCoins }: DeepSud
   const [selectedCell, setSelectedCell] = useState<number | null>(null);
 
   const [gameWon, setGameWon] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [level, setLevel] = useState(1);
+  const [justLeveledUp, setJustLeveledUp] = useState(false);
+  const [maxedOut, setMaxedOut] = useState(false);
   const [mistakes, setMistakes] = useState(0);
   const [earnedCoins, setEarnedCoins] = useState(0);
 
-  const generateSudoku = () => {
+  const difficulty = Math.min(10000, (level - 1) * 100);
+
+  const buildPuzzle = (forDifficulty: number) => {
     const nextSol = generateRandomSolution();
     setSolution(nextSol);
 
-    const targetClues = Math.max(17, 50 - Math.floor((level * 33) / 10000));
+    const targetClues = Math.max(17, 50 - Math.floor((forDifficulty * 33) / 10000));
     const mask = Array(81).fill(false);
     const indices = shuffle(Array.from({ length: 81 }, (_, i) => i));
     for (let i = 0; i < targetClues; i++) mask[indices[i]] = true;
@@ -92,24 +93,35 @@ export default function DeepSudoku({ onBack, userProgress, onAddCoins }: DeepSud
     setInitialMask(mask);
     setSelectedCell(null);
     setGameWon(false);
+    setFailed(false);
+    setJustLeveledUp(false);
+    setMaxedOut(false);
     setMistakes(0);
     setEarnedCoins(0);
   };
 
+  // Regenerate at the component's current level (used by restart/retry/next-puzzle buttons)
+  const generateSudoku = () => buildPuzzle(difficulty);
+
   useEffect(() => {
-    generateSudoku();
+    // Resolve saved progress and build the very first puzzle from it directly,
+    // rather than relying on `level` state (which wouldn't be updated yet).
+    const saved = localStorage.getItem(LEVEL_KEY);
+    const resolvedLevel = saved ? Math.min(MAX_LEVEL, Math.max(1, parseInt(saved, 10))) : 1;
+    setLevel(resolvedLevel);
+    buildPuzzle(Math.min(10000, (resolvedLevel - 1) * 100));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level]);
+  }, []);
 
   const handleCellClick = (idx: number) => {
-    if (initialMask[idx] || gameWon) return;
+    if (initialMask[idx] || gameWon || failed) return;
     playSound('tap', userProgress.soundEnabled);
     triggerHaptic(10, userProgress.hapticEnabled);
     setSelectedCell(idx);
   };
 
   const handleNumberInput = (num: number) => {
-    if (selectedCell === null || gameWon) return;
+    if (selectedCell === null || gameWon || failed) return;
     playSound('tap', userProgress.soundEnabled);
     triggerHaptic(15, userProgress.hapticEnabled);
 
@@ -119,23 +131,37 @@ export default function DeepSudoku({ onBack, userProgress, onAddCoins }: DeepSud
     setBoard(newBoard);
 
     if (num !== correctNum) {
-      setMistakes((m) => m + 1);
+      const nextMistakes = mistakes + 1;
+      setMistakes(nextMistakes);
       triggerHaptic(35, userProgress.hapticEnabled);
+      if (nextMistakes >= 5) {
+        setFailed(true);
+        playSound('lose', userProgress.soundEnabled);
+      }
     } else {
       const isComplete = newBoard.every((val, idx) => val === solution[idx]);
       if (isComplete) {
         setGameWon(true);
         playSound('win', userProgress.soundEnabled);
         triggerHaptic(50, userProgress.hapticEnabled);
-        const bonus = 20 + Math.floor(level / 200);
+        const bonus = 20 + Math.floor(difficulty / 200);
         setEarnedCoins(bonus);
         onAddCoins(bonus);
+
+        if (level < MAX_LEVEL) {
+          const nextLevel = level + 1;
+          setLevel(nextLevel);
+          localStorage.setItem(LEVEL_KEY, nextLevel.toString());
+          setJustLeveledUp(true);
+        } else {
+          setMaxedOut(true);
+        }
       }
     }
   };
 
   const handleErase = () => {
-    if (selectedCell === null || gameWon || initialMask[selectedCell]) return;
+    if (selectedCell === null || gameWon || failed || initialMask[selectedCell]) return;
     playSound('tap', userProgress.soundEnabled);
     triggerHaptic(10, userProgress.hapticEnabled);
     const newBoard = [...board];
@@ -164,46 +190,45 @@ export default function DeepSudoku({ onBack, userProgress, onAddCoins }: DeepSud
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mb-3 shrink-0 text-center">
+      {/* Level progression card — replaces the old free-drag slider */}
+      <div className="bg-white border border-[#EDE4DC] rounded-2xl p-3.5 mb-3 shrink-0 shadow-xs">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#6B4E9E]/10 flex items-center justify-center shrink-0">
+              <Trophy className="w-4 h-4 text-[#6B4E9E]" />
+            </div>
+            <div>
+              <p className="text-[8px] font-black uppercase text-neutral-400 tracking-wider">Current Level</p>
+              <p className="text-sm font-black text-[#6B4E9E] leading-tight">
+                Level {level} <span className="text-neutral-400 font-bold">/ {MAX_LEVEL}</span>
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            {[1, 2].map((offset) => (
+              <div key={offset} className="w-6 h-6 rounded-lg bg-neutral-100 flex items-center justify-center">
+                <Lock className="w-2.5 h-2.5 text-neutral-300" />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="w-full h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+          <div className="h-full bg-[#6B4E9E] rounded-full transition-all" style={{ width: `${(level / MAX_LEVEL) * 100}%` }} />
+        </div>
+        <p className="text-[8px] font-bold text-center text-neutral-400 mt-1.5">
+          {level >= 50 ? '🔥 EXPERT — very few starting clues' : 'Solve the puzzle to unlock the next level'}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-3 shrink-0 text-center">
         <div className="bg-white border border-[#EDE4DC] rounded-xl p-2">
           <p className="text-[8px] font-black uppercase text-neutral-400">Mistakes</p>
           <p className="text-sm font-black text-[#FF6B5D]">{mistakes} / 5</p>
         </div>
         <div className="bg-white border border-[#EDE4DC] rounded-xl p-2">
-          <p className="text-[8px] font-black uppercase text-neutral-400">Sudoku Level</p>
-          <p className="text-sm font-black text-[#6B4E9E]">Lvl {level}</p>
+          <p className="text-[8px] font-black uppercase text-neutral-400">Win Reward</p>
+          <p className="text-sm font-black text-[#F5A623]">🪙 {earnedCoins || `+${20 + Math.floor(difficulty / 200)}`}</p>
         </div>
-        <div className="bg-white border border-[#EDE4DC] rounded-xl p-2">
-          <p className="text-[8px] font-black uppercase text-neutral-400">Win Rewards</p>
-          <p className="text-sm font-black text-[#F5A623]">🪙 {earnedCoins || `+${20 + Math.floor(level / 200)}`}</p>
-        </div>
-      </div>
-
-      <div className="bg-white border border-[#EDE4DC] rounded-2xl p-3 mb-3 shrink-0 shadow-xs">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-[10px] font-black uppercase text-[#6E6270] flex items-center gap-1">
-            <Star className="w-3 h-3 text-[#6B4E9E] fill-current" /> Sudoku Clue Mask (Level 0-10000)
-          </span>
-          <span className="text-xs font-black text-[#6B4E9E]">Lvl {level}</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="10000"
-          step="100"
-          value={level}
-          onChange={(e) => setLevel(parseInt(e.target.value, 10))}
-          className="w-full accent-[#6B4E9E] h-2 bg-neutral-100 rounded-lg appearance-none cursor-pointer"
-        />
-        <div className="flex justify-between mt-1.5 gap-1">
-          <button onClick={() => setLevel(Math.max(0, level - 1000))} className="flex-1 text-[8px] font-black py-1 px-1 bg-[#FBF6F1] rounded-lg border border-[#EDE4DC] text-neutral-600">-1000</button>
-          <button onClick={() => setLevel(Math.max(0, level - 100))} className="flex-1 text-[8px] font-black py-1 px-1 bg-[#FBF6F1] rounded-lg border border-[#EDE4DC] text-neutral-600">-100</button>
-          <button onClick={() => setLevel(Math.min(10000, level + 100))} className="flex-1 text-[8px] font-black py-1 px-1 bg-[#FBF6F1] rounded-lg border border-[#EDE4DC] text-neutral-600">+100</button>
-          <button onClick={() => setLevel(Math.min(10000, level + 1000))} className="flex-1 text-[8px] font-black py-1 px-1 bg-[#FBF6F1] rounded-lg border border-[#EDE4DC] text-neutral-600">+1000</button>
-        </div>
-        <p className="text-[8px] font-bold text-center text-neutral-400 mt-1.5">
-          {level >= 5000 ? '🔥 EXPERT — fewer starting clues' : '🟢 EASY/CASUAL — more starting clues'}
-        </p>
       </div>
 
       <div className="flex-1 flex items-center justify-center bg-white border border-[#EDE4DC] rounded-3xl p-3 relative shadow-inner min-h-[240px]" id="sudoku_board_container">
@@ -242,18 +267,30 @@ export default function DeepSudoku({ onBack, userProgress, onAddCoins }: DeepSud
 
         <AnimatePresence>
           {gameWon && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#FBF6F1]/95 flex flex-col items-center justify-center p-4 text-center z-20">
-              <CheckCircle className="w-12 h-12 text-[#6B4E9E] mb-2" />
-              <h3 className="font-display font-black text-sm text-[#2B1F2E] mb-1">Sudoku Master!</h3>
-              <p className="text-[10px] text-neutral-500 mb-3">
-                Completed Sudoku puzzle at Level {level}. Earned <strong className="text-amber">🪙 {earnedCoins}</strong> coins!
-              </p>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#FBF6F1]/97 flex flex-col items-center justify-center p-4 text-center z-20">
+              {justLeveledUp ? (
+                <>
+                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 14 }}>
+                    <PartyPopper className="w-12 h-12 text-[#F5A623] mb-1.5" />
+                  </motion.div>
+                  <h3 className="font-display font-black text-base text-[#2B1F2E] mb-1">Congratulations!</h3>
+                  <p className="text-xs text-neutral-600 mb-1">You've advanced to</p>
+                  <p className="font-display font-black text-2xl text-[#6B4E9E] mb-2">Level {level}</p>
+                  <p className="text-[10px] text-neutral-500 mb-3">Earned 🪙 {earnedCoins} coins!</p>
+                </>
+              ) : (
+                <>
+                  <Trophy className="w-12 h-12 text-[#F5A623] mb-2" />
+                  <h3 className="font-display font-black text-sm text-[#2B1F2E] mb-1">Sudoku Master!</h3>
+                  <p className="text-[10px] text-neutral-500 mb-3">You've conquered every level. Legendary solving!</p>
+                </>
+              )}
               <div className="flex gap-2">
                 <button
-                  onClick={() => { setLevel((prev) => Math.min(10000, prev + 200)); }}
+                  onClick={generateSudoku}
                   className="px-4 py-2 bg-[#6B4E9E] text-white font-display font-black text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1"
                 >
-                  Next puzzle
+                  {justLeveledUp ? 'Next Puzzle' : 'Play Again'}
                 </button>
                 <button onClick={onBack} className="px-4 py-2 bg-white border border-[#EDE4DC] text-neutral-600 font-display font-black text-xs rounded-xl shadow-xs cursor-pointer">
                   Exit Dashboard
@@ -262,11 +299,11 @@ export default function DeepSudoku({ onBack, userProgress, onAddCoins }: DeepSud
             </motion.div>
           )}
 
-          {mistakes >= 5 && (
+          {failed && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-[#FFEFEC]/95 flex flex-col items-center justify-center p-4 text-center z-20">
               <span className="text-3xl mb-1.5">🏜️</span>
               <h3 className="font-display font-black text-sm text-[#C94A3D] mb-1">Too many mistakes!</h3>
-              <p className="text-[10px] text-neutral-500 mb-3">You hit 5 mistakes. Let's restart or try another level clue setup.</p>
+              <p className="text-[10px] text-neutral-500 mb-3">Still Level {level} — solve it to advance.</p>
               <div className="flex gap-2">
                 <button onClick={generateSudoku} className="px-4 py-2 bg-[#6B4E9E] text-white font-display font-black text-xs rounded-xl shadow-xs cursor-pointer flex items-center gap-1">
                   Retry Puzzle
@@ -287,7 +324,7 @@ export default function DeepSudoku({ onBack, userProgress, onAddCoins }: DeepSud
             <button
               key={num}
               onClick={() => handleNumberInput(num)}
-              disabled={selectedCell === null || gameWon}
+              disabled={selectedCell === null || gameWon || failed}
               className="bg-white active:bg-neutral-100 disabled:opacity-40 border border-[#EDE4DC] py-2.5 rounded-lg text-xs font-black text-center cursor-pointer shadow-xs"
             >
               {num}
@@ -295,7 +332,7 @@ export default function DeepSudoku({ onBack, userProgress, onAddCoins }: DeepSud
           ))}
           <button
             onClick={handleErase}
-            disabled={selectedCell === null || gameWon}
+            disabled={selectedCell === null || gameWon || failed}
             className="bg-[#FFEFEC] active:bg-[#FFE0DB] disabled:opacity-40 border border-[#F5CFC7] py-2.5 rounded-lg text-center cursor-pointer shadow-xs flex items-center justify-center"
           >
             <Eraser className="w-3.5 h-3.5 text-[#C94A3D]" />

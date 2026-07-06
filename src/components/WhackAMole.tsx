@@ -20,6 +20,18 @@ export default function WhackAMole({ onBack, userProgress, onAddCoins }: WhackAM
   const [timeLeft, setTimeLeft] = useState(30); // 30 seconds game round
   const [grid, setGrid] = useState<HoleState[]>(Array(9).fill('empty'));
   const [earnedCoins, setEarnedCoins] = useState(0);
+  
+  // Real-time floating text notifications
+  const [floatingTexts, setFloatingTexts] = useState<{ id: number; index: number; text: string; color: string }[]>([]);
+  const floatingIdCounter = React.useRef(0);
+
+  const spawnFloatingText = (index: number, text: string, color: string) => {
+    const id = floatingIdCounter.current++;
+    setFloatingTexts((prev) => [...prev, { id, index, text, color }]);
+    setTimeout(() => {
+      setFloatingTexts((prev) => prev.filter((item) => item.id !== id));
+    }, 1000);
+  };
 
   // Load high score
   useEffect(() => {
@@ -128,6 +140,7 @@ export default function WhackAMole({ onBack, userProgress, onAddCoins }: WhackAM
       const coins = 1 + Math.floor(level / 2000);
       setEarnedCoins(c => c + coins);
       onAddCoins(coins);
+      spawnFloatingText(index, '+10 🦦', '#6B4E9E');
 
       setGrid((prev) => {
         const next = [...prev];
@@ -147,6 +160,8 @@ export default function WhackAMole({ onBack, userProgress, onAddCoins }: WhackAM
       const coins = 5 + Math.floor(level / 1000);
       setEarnedCoins(c => c + coins);
       onAddCoins(coins);
+      const userAvatar = userProgress.avatar || '🐢';
+      spawnFloatingText(index, `+30 ✨${userAvatar}👑`, '#F5A623');
 
       setGrid((prev) => {
         const next = [...prev];
@@ -157,6 +172,7 @@ export default function WhackAMole({ onBack, userProgress, onAddCoins }: WhackAM
       playSound('lose', userProgress.soundEnabled);
       // Whacking puffer bomb loses points!
       setScore((s) => Math.max(0, s - 15));
+      spawnFloatingText(index, '-15 🐡💣', '#EF4444');
       setGrid((prev) => {
         const next = [...prev];
         next[index] = 'empty';
@@ -275,7 +291,7 @@ export default function WhackAMole({ onBack, userProgress, onAddCoins }: WhackAM
                     exit={{ y: 35, scale: 0.6 }}
                     className="absolute inset-0 flex items-center justify-center text-3xl select-none filter drop-shadow-[0_0_8px_rgba(245,166,35,0.8)]"
                   >
-                    👑
+                    <span>{userProgress.avatar || '🦦'}👑</span>
                   </motion.button>
                 )}
 
@@ -301,6 +317,25 @@ export default function WhackAMole({ onBack, userProgress, onAddCoins }: WhackAM
                     <span className="text-[8px] font-black text-[#6B4E9E] uppercase tracking-widest leading-none">HIT!</span>
                   </motion.div>
                 )}
+              </AnimatePresence>
+
+              {/* Floating Point Popups */}
+              <AnimatePresence>
+                {floatingTexts
+                  .filter((ft) => ft.index === index)
+                  .map((ft) => (
+                    <motion.div
+                      key={ft.id}
+                      initial={{ opacity: 1, y: 15, scale: 0.8 }}
+                      animate={{ opacity: 0, y: -40, scale: 1.2 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.8, ease: 'easeOut' }}
+                      className="absolute z-20 pointer-events-none font-display font-black text-[10px] px-1.5 py-0.5 rounded bg-slate-900/80 border border-white/10 select-none drop-shadow-md flex items-center gap-0.5"
+                      style={{ color: ft.color }}
+                    >
+                      {ft.text}
+                    </motion.div>
+                  ))}
               </AnimatePresence>
             </div>
           ))}
