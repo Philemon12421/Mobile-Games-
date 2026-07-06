@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { playSound, triggerHaptic } from '../utils/audio';
-import { ArrowLeft, RotateCcw, Play, Star } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Play, Trophy, PartyPopper } from 'lucide-react';
 
 interface FlappyDashProps {
   onBack: () => void;
@@ -24,6 +24,12 @@ interface ScorePopup {
   value: number;
 }
 
+const MAX_LEVEL = 100;
+const LEVEL_KEY = 'ocean_flappy_level';
+
+// Score needed (within the current level) to advance to the next one — grows each level
+const pointsNeededForLevel = (lvl: number) => 6 + lvl * 3;
+
 export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyDashProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [gameOver, setGameOver] = useState(false);
@@ -38,19 +44,24 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
   const [scorePopups, setScorePopups] = useState<ScorePopup[]>([]);
   const [hitFlash, setHitFlash] = useState(false);
   const [shakeKey, setShakeKey] = useState(0);
+  const [levelUpToast, setLevelUpToast] = useState<number | null>(null);
 
   const gameLoopRef = useRef<number | null>(null);
   const obstacleIdCounter = useRef(0);
   const popupIdCounter = useRef(0);
+  const levelStartScoreRef = useRef(0);
 
   useEffect(() => {
     const saved = localStorage.getItem('ocean_flappy_highscore');
     if (saved) setHighScore(parseInt(saved, 10));
+    const savedLevel = localStorage.getItem(LEVEL_KEY);
+    if (savedLevel) setLevel(Math.min(MAX_LEVEL, Math.max(1, parseInt(savedLevel, 10))));
   }, []);
 
-  const getSpeed = () => 1.2 + (level * 2.8) / 10000;
-  const getGravity = () => 0.12 + (level * 0.18) / 10000;
-  const getGapSize = () => Math.max(16, 35 - (level * 19) / 10000);
+  const getDifficulty = (lvl: number) => Math.min(10000, (lvl - 1) * 100);
+  const getSpeed = (lvl: number) => 1.2 + (getDifficulty(lvl) * 2.8) / 10000;
+  const getGravity = (lvl: number) => 0.12 + (getDifficulty(lvl) * 0.18) / 10000;
+  const getGapSize = (lvl: number) => Math.max(16, 35 - (getDifficulty(lvl) * 19) / 10000);
 
   const resetGame = () => {
     playSound('tap', userProgress.soundEnabled);
@@ -62,6 +73,7 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
     setGameOver(false);
     setIsPlaying(false);
     setScore(0);
+    levelStartScoreRef.current = 0;
     setEarnedCoins(0);
   };
 
@@ -94,6 +106,22 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
     }
   }, [hitFlash]);
 
+  const checkLevelUp = (currentScore: number, currentLevel: number) => {
+    if (currentLevel >= MAX_LEVEL) return currentLevel;
+    const progress = currentScore - levelStartScoreRef.current;
+    if (progress >= pointsNeededForLevel(currentLevel)) {
+      const nextLevel = currentLevel + 1;
+      localStorage.setItem(LEVEL_KEY, nextLevel.toString());
+      levelStartScoreRef.current = currentScore;
+      setLevelUpToast(nextLevel);
+      playSound('win', userProgress.soundEnabled);
+      triggerHaptic(30, userProgress.hapticEnabled);
+      setTimeout(() => setLevelUpToast(null), 2200);
+      return nextLevel;
+    }
+    return currentLevel;
+  };
+
   useEffect(() => {
     if (!isPlaying || gameOver) return;
     let obstacleTimer = 0;
@@ -103,21 +131,21 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
       if (!current.isPlaying || current.gameOver) return;
 
       let nextBirdY = current.birdY + current.velocity;
-      let nextVelocity = current.velocity + getGravity();
+      let nextVelocity = current.velocity + getGravity(current.level);
 
       if (nextBirdY <= 0 || nextBirdY >= 100) {
         triggerCrash();
         return;
       }
 
-      let updatedList = current.obstacles.map((ob) => ({ ...ob, x: ob.x - getSpeed() }));
+      let updatedList = current.obstacles.map((ob) => ({ ...ob, x: ob.x - getSpeed(current.level) }));
       updatedList = updatedList.filter((ob) => ob.x > -15);
 
       obstacleTimer += 1;
-      const spawnInterval = Math.max(45, 90 - Math.floor(current.level / 200));
+      const spawnInterval = Math.max(45, 90 - Math.floor(getDifficulty(current.level) / 200));
       if (obstacleTimer >= spawnInterval || current.obstacles.length === 0) {
         obstacleTimer = 0;
-        const gap = getGapSize();
+        const gap = getGapSize(current.level);
         const minHeight = 15;
         const maxHeight = 100 - gap - minHeight;
         const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
@@ -133,9 +161,9 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
         if (ob.x < 25 && !ob.passed) {
           ob.passed = true;
           hasPassed = true;
-          const scoreGain = 1 + Math.floor(current.level / 500);
+          const scoreGain = 1;
           scoreGainTotal += scoreGain;
-          const coinsToAward = 3 + Math.floor(current.level / 1000);
+          const coinsToAward = 3 + Math.floor(getDifficulty(current.level) / 1000);
           coinsToAwardTotal += coinsToAward;
           newPopups.push({ id: popupIdCounter.current++, x: 30, y: nextBirdY, value: scoreGain });
         }
@@ -176,7 +204,10 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
         }
         setEarnedCoins((c) => c + coinsToAwardTotal);
         onAddCoins(coinsToAwardTotal);
-        if (current.level < 10000) setLevel((prevLvl) => Math.min(10000, prevLvl + 80));
+
+        const maybeNewLevel = checkLevelUp(nextScore, current.level);
+        if (maybeNewLevel !== current.level) setLevel(maybeNewLevel);
+
         playSound('win', userProgress.soundEnabled);
         triggerHaptic(20, userProgress.hapticEnabled);
       }
@@ -191,10 +222,7 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, gameOver]);
 
-  const handleLevelSlider = (val: number) => {
-    playSound('tap', userProgress.soundEnabled);
-    setLevel(Math.max(0, Math.min(10000, val)));
-  };
+  const progressInLevel = Math.min(1, (score - levelStartScoreRef.current) / pointsNeededForLevel(level));
 
   return (
     <div className="h-full flex flex-col p-4 bg-[#FBF6F1] text-[#2B1F2E] overflow-y-auto" id="flappy_game_wrapper">
@@ -212,6 +240,32 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
         </button>
       </div>
 
+      {/* Level progression card — replaces the old free-drag slider */}
+      <div className="bg-white border border-[#EDE4DC] rounded-2xl p-3.5 mb-3 shrink-0 shadow-xs">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-[#F5A623]/10 flex items-center justify-center shrink-0">
+              <Trophy className="w-4 h-4 text-[#F5A623]" />
+            </div>
+            <div>
+              <p className="text-[8px] font-black uppercase text-neutral-400 tracking-wider">Current Level</p>
+              <p className="text-sm font-black text-[#F5A623] leading-tight">
+                Level {level} <span className="text-neutral-400 font-bold">/ {MAX_LEVEL}</span>
+              </p>
+            </div>
+          </div>
+          <span className="text-[9px] font-black text-neutral-400">
+            {level >= MAX_LEVEL ? 'MAX' : `${Math.floor(progressInLevel * 100)}%`}
+          </span>
+        </div>
+        <div className="w-full h-1.5 rounded-full bg-neutral-100 overflow-hidden">
+          <div className="h-full bg-[#F5A623] rounded-full transition-all" style={{ width: `${progressInLevel * 100}%` }} />
+        </div>
+        <p className="text-[8px] font-bold text-center text-neutral-400 mt-1.5">
+          Clear pipes to reach the score target and level up mid-run
+        </p>
+      </div>
+
       <div className="grid grid-cols-3 gap-2 mb-3 shrink-0 text-center">
         <div className="bg-white border border-[#EDE4DC] rounded-xl p-2">
           <p className="text-[8px] font-black uppercase text-neutral-400">Score</p>
@@ -227,31 +281,6 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
         </div>
       </div>
 
-      <div className="bg-white border border-[#EDE4DC] rounded-2xl p-3 mb-3 shrink-0 shadow-xs">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-[10px] font-black uppercase text-[#6E6270] flex items-center gap-1">
-            <Star className="w-3 h-3 text-[#F5A623] fill-current" /> Flap Difficulty (Level 0-10000)
-          </span>
-          <span className="text-xs font-black text-[#F5A623]">Lvl {level}</span>
-        </div>
-        <input
-          type="range"
-          min="0"
-          max="10000"
-          step="100"
-          value={level}
-          disabled={isPlaying}
-          onChange={(e) => handleLevelSlider(parseInt(e.target.value, 10))}
-          className="w-full accent-[#F5A623] h-2 bg-neutral-100 rounded-lg appearance-none cursor-pointer"
-        />
-        <div className="flex justify-between mt-1.5 gap-1">
-          <button onClick={() => handleLevelSlider(level - 1000)} disabled={isPlaying} className="flex-1 text-[8px] font-black py-1 px-1 bg-[#FBF6F1] rounded-lg border border-[#EDE4DC] active:bg-[#FFEFEC] disabled:opacity-50 text-neutral-600">-1000</button>
-          <button onClick={() => handleLevelSlider(level - 100)} disabled={isPlaying} className="flex-1 text-[8px] font-black py-1 px-1 bg-[#FBF6F1] rounded-lg border border-[#EDE4DC] active:bg-[#FFEFEC] disabled:opacity-50 text-neutral-600">-100</button>
-          <button onClick={() => handleLevelSlider(level + 100)} disabled={isPlaying} className="flex-1 text-[8px] font-black py-1 px-1 bg-[#FBF6F1] rounded-lg border border-[#EDE4DC] active:bg-[#FFEFEC] disabled:opacity-50 text-neutral-600">+100</button>
-          <button onClick={() => handleLevelSlider(level + 1000)} disabled={isPlaying} className="flex-1 text-[8px] font-black py-1 px-1 bg-[#FBF6F1] rounded-lg border border-[#EDE4DC] active:bg-[#FFEFEC] disabled:opacity-50 text-neutral-600">+1000</button>
-        </div>
-      </div>
-
       <motion.div
         key={shakeKey}
         animate={hitFlash ? { x: [0, -6, 6, -4, 4, 0] } : {}}
@@ -260,6 +289,20 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
         className="flex-1 min-h-[220px] bg-sky-50 border border-[#EDE4DC] rounded-3xl overflow-hidden relative shadow-inner cursor-pointer"
         id="flappy_game_tap_zone"
       >
+        <AnimatePresence>
+          {levelUpToast !== null && (
+            <motion.div
+              initial={{ opacity: 0, y: -16, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -16, scale: 0.9 }}
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-40 bg-slate-900 border-2 border-amber/40 rounded-2xl px-4 py-2.5 shadow-lg flex items-center gap-2"
+            >
+              <PartyPopper className="w-4 h-4 text-amber" />
+              <span className="text-xs font-black text-white">Level Up! Now Level {levelUpToast}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {hitFlash && (
             <motion.div
@@ -285,7 +328,6 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
           </React.Fragment>
         ))}
 
-        {/* Floating score popups */}
         <AnimatePresence>
           {scorePopups.map((p) => (
             <motion.div
@@ -328,7 +370,7 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
               <span className="text-3xl mb-1.5">🐠</span>
               <h3 className="font-display font-black text-sm text-[#2B1F2E] mb-1">Flappy Coral Dash</h3>
               <p className="text-[10px] text-neutral-500 max-w-[180px] leading-snug mb-3">
-                Tap or click ANYWHERE inside this aquarium to swim up. Avoid dangerous coral spikes!
+                Tap or click ANYWHERE inside this aquarium to swim up. Clear pipes to level up as you go!
               </p>
               <button
                 onClick={flap}
@@ -348,9 +390,10 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
             >
               <span className="text-4xl mb-1">🐡</span>
               <h3 className="font-display font-black text-sm text-[#C94A3D] mb-1">Crashed into Coral!</h3>
-              <p className="text-[10px] text-neutral-600 mb-3">
+              <p className="text-[10px] text-neutral-600 mb-1">
                 You scored <strong className="text-lg font-black">{score}</strong> pts
               </p>
+              <p className="text-[9px] text-neutral-400 mb-3">Reached Level {level}</p>
               <div className="flex gap-2">
                 <button
                   onClick={resetGame}
@@ -371,7 +414,7 @@ export default function FlappyDash({ onBack, userProgress, onAddCoins }: FlappyD
       </motion.div>
 
       <div className="mt-3 text-center text-[10px] text-neutral-400 font-bold">
-        ℹ️ PRO-TIP: Speed and Gravity intensify as you crank the levels up!
+        ℹ️ Your level carries over between runs — pick up right where you left off!
       </div>
     </div>
   );
