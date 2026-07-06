@@ -294,13 +294,13 @@ export default function ConnectFour({ onBack, userProgress, onAddCoins }: Connec
                       initial={{ y: `${-(row + 1) * 120}%`, opacity: 0.4 }}
                       animate={{ y: 0, opacity: 1 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 22 }}
-                      className={`w-full h-full rounded-full flex items-center justify-center ${
+                      className={`w-full h-full rounded-full flex items-center justify-center text-xl select-none ${
                         cell === 'player'
                           ? 'bg-[#FF6B5D] border border-white/40 shadow-lg'
                           : 'bg-neutral-800 border border-neutral-600 shadow-lg'
                       } ${isWinningCell ? 'ring-4 ring-[#F5A623] animate-pulse' : ''}`}
                     >
-                      {cell === 'player' ? '🔴' : '⚫'}
+                      {cell === 'player' ? (userProgress.avatar || '🐠') : '🐙'}
                     </motion.div>
                   )}
                 </AnimatePresence>

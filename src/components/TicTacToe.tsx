@@ -216,9 +216,9 @@ export default function TicTacToe({ onBack, userProgress, onAddCoins }: TicTacTo
                         initial={{ scale: 0, rotate: -45 }}
                         animate={{ scale: 1, rotate: 0 }}
                         exit={{ scale: 0 }}
-                        className="text-coral select-none"
+                        className="select-none text-3xl"
                       >
-                        ✕
+                        {userProgress.avatar || '🐢'}
                       </motion.span>
                     )}
                     {cell === 'o' && (
@@ -226,9 +226,9 @@ export default function TicTacToe({ onBack, userProgress, onAddCoins }: TicTacTo
                         initial={{ scale: 0, rotate: 45 }}
                         animate={{ scale: 1, rotate: 0 }}
                         exit={{ scale: 0 }}
-                        className="text-purple select-none"
+                        className="select-none text-3xl"
                       >
-                        ◯
+                        🤖
                       </motion.span>
                     )}
                   </AnimatePresence>
