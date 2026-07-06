@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { playSound, triggerHaptic } from '../utils/audio';
-import { ArrowLeft, RotateCcw, Play, Pause, Shield, Zap, Swords, Flame, Trophy } from 'lucide-react';
+import { ArrowLeft, RotateCcw, Play, Pause, Shield, Zap, Swords, Flame, Trophy, PartyPopper } from 'lucide-react';
 
 interface AirplaneShooterProps {
   onBack: () => void;
@@ -73,6 +73,7 @@ export default function AirplaneShooter({ onBack, userProgress, onAddCoins }: Ai
   const [hitFlash, setHitFlash] = useState(false);
   const [shakeKey, setShakeKey] = useState(0);
   const [isNewHighScore, setIsNewHighScore] = useState(false);
+  const [levelUpToast, setLevelUpToast] = useState<number | null>(null);
 
   const [bullets, setBullets] = useState<Bullet[]>([]);
   const [enemies, setEnemies] = useState<Enemy[]>([]);
@@ -170,7 +171,14 @@ export default function AirplaneShooter({ onBack, userProgress, onAddCoins }: Ai
       }
 
       const newLevel = Math.min(15, Math.floor(scoreRef.current / 200) + 1);
-      setLevel((l) => (newLevel > l ? newLevel : l));
+      setLevel((l) => {
+        if (newLevel > l) {
+          setLevelUpToast(newLevel);
+          setTimeout(() => setLevelUpToast(null), 2200);
+          return newLevel;
+        }
+        return l;
+      });
 
       setEarnedCoins((c2) => c2 + coinsWon);
       onAddCoins(coinsWon);
@@ -550,6 +558,21 @@ export default function AirplaneShooter({ onBack, userProgress, onAddCoins }: Ai
         className="flex-1 min-h-[220px] bg-[#0c1a40] border border-slate-900 rounded-3xl overflow-hidden relative shadow-inner p-1 touch-none cursor-pointer"
         id="airplane_arena"
       >
+        {/* Level up toast */}
+        <AnimatePresence>
+          {levelUpToast !== null && (
+            <motion.div
+              initial={{ opacity: 0, y: -16, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -16, scale: 0.9 }}
+              className="absolute top-3 left-1/2 -translate-x-1/2 z-40 bg-slate-900 border-2 border-amber/40 rounded-2xl px-4 py-2.5 shadow-lg flex items-center gap-2"
+            >
+              <PartyPopper className="w-4 h-4 text-amber" />
+              <span className="text-xs font-black text-white">Level Up! Squad Lvl {levelUpToast}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Hit flash overlay */}
         <AnimatePresence>
           {hitFlash && (
