@@ -31,6 +31,11 @@ interface FloatingIcon {
   color: string;
 }
 
+const PORTALS: Position[] = [
+  { x: 2, y: 2 },
+  { x: 12, y: 12 }
+];
+
 export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGameProps) {
   const GRID_SIZE = 15;
   const [snake, setSnake] = useState<Position[]>([
@@ -50,6 +55,7 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
   const [hasShield, setHasShield] = useState(false);
   const [slowTicks, setSlowTicks] = useState(0); // number of ticks remaining under slow-mo
   const [floatingIcons, setFloatingIcons] = useState<FloatingIcon[]>([]);
+  const [combo, setCombo] = useState(1);
 
   // Level system: 0 to 10000
   const [level, setLevel] = useState(1);
@@ -58,6 +64,7 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
   const directionRef = useRef<Direction>('UP');
   const floatingIdCounter = useRef(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const ticksSinceLastEatRef = useRef(0);
 
   // Load high score
   useEffect(() => {
@@ -86,20 +93,21 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
         y: Math.floor(Math.random() * GRID_SIZE),
       };
 
-      // Rules: Avoid spawning close to initial snake head (7,7), on current snake, on current food, or duplicate locations
+      // Rules: Avoid spawning close to initial snake head (7,7), on current snake, on current food, or duplicate locations, and avoid portals
       const isNearStart = Math.abs(obs.x - 7) <= 2 && Math.abs(obs.y - 7) <= 2;
       const isOnSnake = currentSnake.some((seg) => seg.x === obs.x && seg.y === obs.y);
       const isOnFood = obs.x === currentFood.x && obs.y === currentFood.y;
       const isDuplicate = newObstacles.some((o) => o.x === obs.x && o.y === obs.y);
+      const isOnPortal = PORTALS.some((p) => p.x === obs.x && p.y === obs.y);
 
-      if (!isNearStart && !isOnSnake && !isOnFood && !isDuplicate) {
+      if (!isNearStart && !isOnSnake && !isOnFood && !isDuplicate && !isOnPortal) {
         newObstacles.push(obs);
       }
     }
     setObstacles(newObstacles);
   };
 
-  // Spawn food avoiding snake & obstacles
+  // Spawn food avoiding snake & obstacles & portals
   const spawnFoodItem = (currentSnake: Position[], currentObstacles: Position[]) => {
     let newFood: Position;
     let attempts = 0;
@@ -112,7 +120,8 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
     } while (
       attempts < 100 && (
         currentSnake.some((seg) => seg.x === newFood.x && seg.y === newFood.y) ||
-        currentObstacles.some((obs) => obs.x === newFood.x && obs.y === newFood.y)
+        currentObstacles.some((obs) => obs.x === newFood.x && obs.y === newFood.y) ||
+        PORTALS.some((p) => p.x === newFood.x && p.y === newFood.y)
       )
     );
 
@@ -157,6 +166,8 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
     setEarnedCoins(0);
     setHasShield(false);
     setSlowTicks(0);
+    setCombo(1);
+    ticksSinceLastEatRef.current = 0;
     
     const tempFood = { x: 3, y: 3, type: 'NORMAL' as FoodType };
     setFoodItem(tempFood);
@@ -230,6 +241,12 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
     if (!isPlaying || gameOver) return;
 
     const gameTick = () => {
+      // Increment ticks since last eaten
+      ticksSinceLastEatRef.current += 1;
+      if (ticksSinceLastEatRef.current > 25) {
+        setCombo(1);
+      }
+
       // decrement slowTicks count if active
       if (slowTicks > 0) {
         setSlowTicks((prev) => prev - 1);
@@ -245,6 +262,21 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
           case 'DOWN': newHead.y += 1; break;
           case 'LEFT': newHead.x -= 1; break;
           case 'RIGHT': newHead.x += 1; break;
+        }
+
+        // --- NEW UNDERSEA PORTALS (🌀) LOGIC ---
+        let teleported = false;
+        if (newHead.x === PORTALS[0].x && newHead.y === PORTALS[0].y) {
+          newHead = { ...PORTALS[1] };
+          teleported = true;
+        } else if (newHead.x === PORTALS[1].x && newHead.y === PORTALS[1].y) {
+          newHead = { ...PORTALS[0] };
+          teleported = true;
+        }
+        if (teleported) {
+          playSound('win', userProgress.soundEnabled);
+          triggerHaptic(25, userProgress.hapticEnabled);
+          spawnFloatingIcon(newHead.x, newHead.y, '🌀 Whirlpool Warp!', '#A855F7');
         }
 
         // Collision Checks: Wall, Self, or Obstacles
@@ -288,6 +320,14 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
           playSound('win', userProgress.soundEnabled);
           triggerHaptic(20, userProgress.hapticEnabled);
 
+          // Calculate new combo
+          let currentCombo = 1;
+          if (ticksSinceLastEatRef.current <= 25) {
+            currentCombo = Math.min(4, combo + 1);
+          }
+          setCombo(currentCombo);
+          ticksSinceLastEatRef.current = 0;
+
           // Handle rewards based on eaten FoodType
           let scoreGain = 1;
           let coinGain = 2;
@@ -319,6 +359,12 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
             floatingColor = '#FF6B5D';
           }
 
+          // Apply combo multiplier to score gain
+          scoreGain = scoreGain * currentCombo;
+          if (currentCombo > 1) {
+            floatingText = `🔥 x${currentCombo} Combo! ${floatingText}`;
+          }
+
           spawnFloatingIcon(newHead.x, newHead.y, floatingText, floatingColor);
 
           const nextScore = score + scoreGain;
@@ -348,7 +394,7 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
 
     const intervalId = setInterval(gameTick, getSpeed());
     return () => clearInterval(intervalId);
-  }, [isPlaying, gameOver, foodItem, obstacles, level, score, highScore, hasShield, slowTicks]);
+  }, [isPlaying, gameOver, foodItem, obstacles, level, score, highScore, hasShield, slowTicks, combo]);
 
   const handleMobileDir = (newDir: Direction) => {
     if (!isPlaying || gameOver) return;
@@ -409,6 +455,11 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
 
       {/* Buff / Effect Indicators */}
       <div className="flex gap-2 mb-2 shrink-0 justify-center">
+        {combo > 1 && (
+          <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-600 rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-wide animate-bounce">
+            🔥 {combo}x Combo Active
+          </div>
+        )}
         {hasShield && (
           <div className="flex items-center gap-1 bg-cyan-50 border border-cyan-200 text-cyan-600 rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-wide animate-pulse">
             <Shield className="w-3 h-3 text-cyan-500" /> Bubble Shield active
@@ -535,6 +586,17 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
               >
                 {/* Undersea tile subtle texture */}
                 <div className="absolute inset-[1px] rounded-xs bg-[#0F223D]/30" />
+
+                {/* Render Portal Whirlpools */}
+                {PORTALS.some((p) => p.x === x && p.y === y) && !isSnake && !isFood && !isObstacle && (
+                  <motion.div
+                    animate={{ rotate: 360, scale: [0.85, 1.1, 0.85] }}
+                    transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
+                    className="absolute inset-0.5 flex items-center justify-center text-sm z-5 select-none filter drop-shadow-[0_0_3px_#a855f7] opacity-80"
+                  >
+                    🌀
+                  </motion.div>
+                )}
 
                 {/* Render Obstacle Corals */}
                 {isObstacle && (

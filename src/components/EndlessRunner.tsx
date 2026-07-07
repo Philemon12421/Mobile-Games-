@@ -339,7 +339,7 @@ export default function EndlessRunner({ onBack, userProgress, onAddCoins }: Endl
             transform: `translate(-50%, -50%) rotate(${Math.min(30, Math.max(-30, velocityRef.current * 12))}deg)`,
           }}
         >
-          🐋
+          {userProgress.avatar || '🐋'}
         </div>
 
         <AnimatePresence>
@@ -350,7 +350,7 @@ export default function EndlessRunner({ onBack, userProgress, onAddCoins }: Endl
               exit={{ opacity: 0 }}
               className="absolute inset-0 bg-[#FBF6F1]/95 flex flex-col items-center justify-center p-4 text-center z-20"
             >
-              <span className="text-4xl mb-1.5 animate-bounce">🐋</span>
+              <span className="text-4xl mb-1.5 animate-bounce">{userProgress.avatar || '🐋'}</span>
               <h3 className="font-display font-black text-sm text-[#2B1F2E] mb-1">Deep Sea Endless Swimmer</h3>
               <p className="text-[10px] text-neutral-500 max-w-[200px] leading-snug mb-3">
                 Tap anywhere inside the screen frame to swim upwards. Hit the score target to level up as you go!
