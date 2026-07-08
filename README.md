@@ -125,4 +125,4 @@ npx expo start
 *   **Elegant Typography**: Hand-crafted layouts utilizing clean typography elements (Inter/JetBrains Mono for statistics).
 *   **Sound Toggle**: Interactive global sound control mechanism which manages synthetic SFX and alerts.
 
-Do well to go by the rules and regu
+
