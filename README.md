@@ -1,6 +1,6 @@
 # 🌊 OceanGames
 
-> An immersive, high-fidelity deep-sea arcade campaign and games hub. Seamlessly runs as a high-performance React SPA via Vite and is fully structured for mobile devices with React Native & Expo
+> An immersive, high-fidelity deep-sea arcade campaign and games hub. Seamlessly runs as a high-performance React SPA via Vite and is fully structured for mobile devices with React Native & Expo.dgadrdg
 
 ---
 
