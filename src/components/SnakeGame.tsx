@@ -31,6 +31,13 @@ interface FloatingIcon {
   color: string;
 }
 
+interface PredatorSnake {
+  id: number;
+  segments: Position[];
+  emoji: string;
+  color: string;
+}
+
 const PORTALS: Position[] = [
   { x: 2, y: 2 },
   { x: 12, y: 12 }
@@ -42,6 +49,17 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
     { x: 7, y: 7 },
     { x: 7, y: 8 },
     { x: 7, y: 9 },
+  ]);
+  const [predators, setPredators] = useState<PredatorSnake[]>([
+    {
+      id: 1,
+      segments: [
+        { x: 0, y: 0 },
+        { x: 0, y: 1 },
+      ],
+      emoji: '🦈',
+      color: '#A855F7',
+    },
   ]);
   const [foodItem, setFoodItem] = useState<FoodItem>({ x: 3, y: 3, type: 'NORMAL' });
   const [obstacles, setObstacles] = useState<Position[]>([]);
@@ -65,6 +83,7 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
   const floatingIdCounter = useRef(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const ticksSinceLastEatRef = useRef(0);
+  const predatorTickCounterRef = useRef(0);
 
   // Load high score
   useEffect(() => {
@@ -81,8 +100,13 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
     return baseSpeed;
   };
 
-  // Generate obstacles based on Level
-  const spawnObstacles = (currentSnake: Position[], currentFood: Position, currentLevel: number) => {
+  // Generate obstacles based on Level (avoiding portals & predators)
+  const spawnObstacles = (
+    currentSnake: Position[],
+    currentFood: Position,
+    currentLevel: number,
+    currentPredators: PredatorSnake[]
+  ) => {
     // 0 obstacles for level < 1500, up to 5 for level >= 7000
     const obstacleCount = currentLevel >= 7500 ? 5 : currentLevel >= 4500 ? 3 : currentLevel >= 2000 ? 1 : 0;
     const newObstacles: Position[] = [];
@@ -93,22 +117,29 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
         y: Math.floor(Math.random() * GRID_SIZE),
       };
 
-      // Rules: Avoid spawning close to initial snake head (7,7), on current snake, on current food, or duplicate locations, and avoid portals
+      // Rules: Avoid spawning close to initial snake head (7,7), on current snake, on current food, or duplicate locations, and avoid portals/predators
       const isNearStart = Math.abs(obs.x - 7) <= 2 && Math.abs(obs.y - 7) <= 2;
       const isOnSnake = currentSnake.some((seg) => seg.x === obs.x && seg.y === obs.y);
       const isOnFood = obs.x === currentFood.x && obs.y === currentFood.y;
       const isDuplicate = newObstacles.some((o) => o.x === obs.x && o.y === obs.y);
       const isOnPortal = PORTALS.some((p) => p.x === obs.x && p.y === obs.y);
+      const isOnPredator = currentPredators.some((pred) =>
+        pred.segments.some((seg) => seg.x === obs.x && seg.y === obs.y)
+      );
 
-      if (!isNearStart && !isOnSnake && !isOnFood && !isDuplicate && !isOnPortal) {
+      if (!isNearStart && !isOnSnake && !isOnFood && !isDuplicate && !isOnPortal && !isOnPredator) {
         newObstacles.push(obs);
       }
     }
     setObstacles(newObstacles);
   };
 
-  // Spawn food avoiding snake & obstacles & portals
-  const spawnFoodItem = (currentSnake: Position[], currentObstacles: Position[]) => {
+  // Spawn food avoiding snake & obstacles & portals & predators
+  const spawnFoodItem = (
+    currentSnake: Position[],
+    currentObstacles: Position[],
+    currentPredators: PredatorSnake[]
+  ) => {
     let newFood: Position;
     let attempts = 0;
     do {
@@ -121,7 +152,10 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
       attempts < 100 && (
         currentSnake.some((seg) => seg.x === newFood.x && seg.y === newFood.y) ||
         currentObstacles.some((obs) => obs.x === newFood.x && obs.y === newFood.y) ||
-        PORTALS.some((p) => p.x === newFood.x && p.y === newFood.y)
+        PORTALS.some((p) => p.x === newFood.x && p.y === newFood.y) ||
+        currentPredators.some((pred) =>
+          pred.segments.some((seg) => seg.x === newFood.x && seg.y === newFood.y)
+        )
       )
     );
 
@@ -148,6 +182,106 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
     }, 1200);
   };
 
+  // Autonomous predator pathfinding move
+  const movePredators = (
+    playerSnake: Position[],
+    currentObstacles: Position[],
+    currentPredators: PredatorSnake[]
+  ): PredatorSnake[] => {
+    const playerHead = playerSnake[0];
+    
+    return currentPredators.map((pred) => {
+      const head = pred.segments[0];
+      
+      // Calculate 4 possible options
+      const directions: { dir: Direction; pos: Position }[] = [
+        { dir: 'UP', pos: { x: head.x, y: head.y - 1 } },
+        { dir: 'DOWN', pos: { x: head.x, y: head.y + 1 } },
+        { dir: 'LEFT', pos: { x: head.x - 1, y: head.y } },
+        { dir: 'RIGHT', pos: { x: head.x + 1, y: head.y } },
+      ];
+      
+      // Filter valid cells (inside board, avoiding corals, portals, and other predators' body parts)
+      const validSteps = directions.filter((step) => {
+        const p = step.pos;
+        const outOfBounds = p.x < 0 || p.x >= GRID_SIZE || p.y < 0 || p.y >= GRID_SIZE;
+        const hitsObstacle = currentObstacles.some((obs) => obs.x === p.x && obs.y === p.y);
+        const hitsPortal = PORTALS.some((port) => port.x === p.x && port.y === p.y);
+        
+        const hitsOtherPredator = currentPredators.some((other) => {
+          if (other.id === pred.id) {
+            // Avoid own body tail segments
+            return other.segments.slice(1).some((seg) => seg.x === p.x && seg.y === p.y);
+          }
+          return other.segments.some((seg) => seg.x === p.x && seg.y === p.y);
+        });
+        
+        return !outOfBounds && !hitsObstacle && !hitsPortal && !hitsOtherPredator;
+      });
+      
+      let bestPos = head;
+      if (validSteps.length > 0) {
+        // Greedy choice towards player head
+        validSteps.sort((a, b) => {
+          const distA = Math.abs(a.pos.x - playerHead.x) + Math.abs(a.pos.y - playerHead.y);
+          const distB = Math.abs(b.pos.x - playerHead.x) + Math.abs(b.pos.y - playerHead.y);
+          return distA - distB;
+        });
+        bestPos = validSteps[0].pos;
+      } else {
+        // Fallback to any in-bound step
+        const boundsSteps = directions.filter((step) => {
+          const p = step.pos;
+          return p.x >= 0 && p.x < GRID_SIZE && p.y >= 0 && p.y < GRID_SIZE;
+        });
+        if (boundsSteps.length > 0) {
+          bestPos = boundsSteps[Math.floor(Math.random() * boundsSteps.length)].pos;
+        }
+      }
+      
+      const newSegments = [bestPos, ...pred.segments.slice(0, pred.segments.length - 1)];
+      return {
+        ...pred,
+        segments: newSegments,
+      };
+    });
+  };
+
+  // Check and spawn additional predators at score checkpoints
+  const checkAndSpawnPredators = (currentScore: number, currentPredators: PredatorSnake[]): PredatorSnake[] => {
+    const updated = [...currentPredators];
+    
+    // Predator 2 (Eel) at score >= 8
+    if (currentScore >= 8 && !updated.some((p) => p.id === 2)) {
+      updated.push({
+        id: 2,
+        segments: [
+          { x: GRID_SIZE - 1, y: 0 },
+          { x: GRID_SIZE - 1, y: 1 },
+        ],
+        emoji: '🐍',
+        color: '#F43F5E', // rose
+      });
+      spawnFloatingIcon(GRID_SIZE - 1, 0, '⚠️ Predator Eel Spawned!', '#F43F5E');
+    }
+    
+    // Predator 3 (Squid) at score >= 20
+    if (currentScore >= 20 && !updated.some((p) => p.id === 3)) {
+      updated.push({
+        id: 3,
+        segments: [
+          { x: 0, y: GRID_SIZE - 1 },
+          { x: 1, y: GRID_SIZE - 1 },
+        ],
+        emoji: '🦑',
+        color: '#EF4444', // red
+      });
+      spawnFloatingIcon(0, GRID_SIZE - 1, '⚠️ Predator Squid Spawned!', '#EF4444');
+    }
+    
+    return updated;
+  };
+
   // Reset Game
   const resetGame = () => {
     playSound('tap', userProgress.soundEnabled);
@@ -157,7 +291,19 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
       { x: 7, y: 8 },
       { x: 7, y: 9 },
     ];
+    const initialPredators = [
+      {
+        id: 1,
+        segments: [
+          { x: 0, y: 0 },
+          { x: 0, y: 1 },
+        ],
+        emoji: '🦈',
+        color: '#A855F7',
+      }
+    ];
     setSnake(initialSnake);
+    setPredators(initialPredators);
     setDir('UP');
     directionRef.current = 'UP';
     setGameOver(false);
@@ -168,10 +314,11 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
     setSlowTicks(0);
     setCombo(1);
     ticksSinceLastEatRef.current = 0;
+    predatorTickCounterRef.current = 0;
     
     const tempFood = { x: 3, y: 3, type: 'NORMAL' as FoodType };
     setFoodItem(tempFood);
-    spawnObstacles(initialSnake, tempFood, level);
+    spawnObstacles(initialSnake, tempFood, level, initialPredators);
   };
 
   // Swipe Gestures Support
@@ -252,6 +399,60 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
         setSlowTicks((prev) => prev - 1);
       }
 
+      // --- AUTONOMOUS PREDATORS MOVEMENT & COLLISION PHASE ---
+      predatorTickCounterRef.current += 1;
+      let nextPredators = predators;
+      
+      if (predatorTickCounterRef.current % 2 === 0) {
+        nextPredators = movePredators(snake, obstacles, predators);
+        setPredators(nextPredators);
+      }
+
+      // Check if predator head collides with any part of player's snake body
+      let predatorHitPlayer = false;
+      let hitPredator: PredatorSnake | undefined;
+      for (const pred of nextPredators) {
+        const head = pred.segments[0];
+        if (snake.some((seg) => seg.x === head.x && seg.y === head.y)) {
+          predatorHitPlayer = true;
+          hitPredator = pred;
+          break;
+        }
+      }
+
+      if (predatorHitPlayer && hitPredator) {
+        if (hasShield) {
+          setHasShield(false);
+          playSound('lose', userProgress.soundEnabled);
+          triggerHaptic(40, userProgress.hapticEnabled);
+          spawnFloatingIcon(snake[0].x, snake[0].y, '🛡️ Predator Bounced!', '#38BDF8');
+          
+          // Reset this specific predator to its corner
+          setPredators((prevPreds) =>
+            prevPreds.map((p) => {
+              if (p.id === hitPredator!.id) {
+                let corner = { x: 0, y: 0 };
+                if (p.id === 2) corner = { x: GRID_SIZE - 1, y: 0 };
+                if (p.id === 3) corner = { x: 0, y: GRID_SIZE - 1 };
+                return {
+                  ...p,
+                  segments: [corner, { ...corner }],
+                };
+              }
+              return p;
+            })
+          );
+          return; // Ignore this tick to let player escape
+        } else {
+          setGameOver(true);
+          setIsPlaying(false);
+          playSound('lose', userProgress.soundEnabled);
+          triggerHaptic(50, userProgress.hapticEnabled);
+          return;
+        }
+      }
+
+      // --- PLAYER MOVEMENT PHASE ---
       setSnake((prevSnake) => {
         const head = prevSnake[0];
         const currentDir = directionRef.current;
@@ -279,12 +480,22 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
           spawnFloatingIcon(newHead.x, newHead.y, '🌀 Whirlpool Warp!', '#A855F7');
         }
 
-        // Collision Checks: Wall, Self, or Obstacles
+        // Collision Checks: Wall, Self, Obstacles, or Predator segments
         const isBoundaryCollision = newHead.x < 0 || newHead.x >= GRID_SIZE || newHead.y < 0 || newHead.y >= GRID_SIZE;
         const isSelfCollision = prevSnake.some((segment) => segment.x === newHead.x && segment.y === newHead.y);
         const isObstacleCollision = obstacles.some((obs) => obs.x === newHead.x && obs.y === newHead.y);
+        
+        let isPredatorCollision = false;
+        let collidedPredator: PredatorSnake | undefined;
+        for (const pred of nextPredators) {
+          if (pred.segments.some((seg) => seg.x === newHead.x && seg.y === newHead.y)) {
+            isPredatorCollision = true;
+            collidedPredator = pred;
+            break;
+          }
+        }
 
-        if (isBoundaryCollision || isSelfCollision || isObstacleCollision) {
+        if (isBoundaryCollision || isSelfCollision || isObstacleCollision || isPredatorCollision) {
           if (hasShield) {
             // Shield absorbs collision!
             setHasShield(false);
@@ -298,6 +509,24 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
               if (newHead.y < 0) newHead.y = GRID_SIZE - 1;
               else if (newHead.y >= GRID_SIZE) newHead.y = 0;
               spawnFloatingIcon(head.x, head.y, '🫧 Shield Burst (Safe!)', '#22D3EE');
+            } else if (isPredatorCollision && collidedPredator) {
+              spawnFloatingIcon(head.x, head.y, '🛡️ Shield Deflected Predator!', '#38BDF8');
+              // Reset predator
+              setPredators((prevPreds) =>
+                prevPreds.map((p) => {
+                  if (p.id === collidedPredator!.id) {
+                    let corner = { x: 0, y: 0 };
+                    if (p.id === 2) corner = { x: GRID_SIZE - 1, y: 0 };
+                    if (p.id === 3) corner = { x: 0, y: GRID_SIZE - 1 };
+                    return {
+                      ...p,
+                      segments: [corner, { ...corner }],
+                    };
+                  }
+                  return p;
+                })
+              );
+              return prevSnake; // Ignore tick to let user turn away
             } else {
               // Self or Obstacle survival flashes safe
               spawnFloatingIcon(head.x, head.y, '🛡️ Shield Deflected!', '#38BDF8');
@@ -383,7 +612,11 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
             setLevel((prev) => Math.min(10000, prev + 120));
           }
 
-          spawnFoodItem(newSnake, obstacles);
+          // Dynamic Predator spawn checks on score update
+          const updatedPreds = checkAndSpawnPredators(nextScore, nextPredators);
+          setPredators(updatedPreds);
+
+          spawnFoodItem(newSnake, obstacles, updatedPreds);
         } else {
           newSnake.pop();
         }
@@ -394,7 +627,22 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
 
     const intervalId = setInterval(gameTick, getSpeed());
     return () => clearInterval(intervalId);
-  }, [isPlaying, gameOver, foodItem, obstacles, level, score, highScore, hasShield, slowTicks, combo]);
+  }, [
+    isPlaying,
+    gameOver,
+    foodItem,
+    obstacles,
+    level,
+    score,
+    highScore,
+    hasShield,
+    slowTicks,
+    combo,
+    predators,
+    snake,
+    userProgress.soundEnabled,
+    userProgress.hapticEnabled,
+  ]);
 
   const handleMobileDir = (newDir: Direction) => {
     if (!isPlaying || gameOver) return;
@@ -412,7 +660,7 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
     setLevel(nextLevel);
     
     // update obstacles preview
-    spawnObstacles(snake, foodItem, nextLevel);
+    spawnObstacles(snake, foodItem, nextLevel, predators);
   };
 
   return (
@@ -562,6 +810,23 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
             const isFood = foodItem.x === x && foodItem.y === y;
             const isObstacle = obstacles.some((obs) => obs.x === x && obs.y === y);
 
+            // Predator Cell Detection
+            let isPredator = false;
+            let isPredatorHead = false;
+            let foundPredator: PredatorSnake | undefined;
+            let predatorSegmentIndex = -1;
+
+            for (const pred of predators) {
+              const segIdx = pred.segments.findIndex((seg) => seg.x === x && seg.y === y);
+              if (segIdx !== -1) {
+                isPredator = true;
+                isPredatorHead = segIdx === 0;
+                foundPredator = pred;
+                predatorSegmentIndex = segIdx;
+                break;
+              }
+            }
+
             // Determine snake scale and opacity organic ribbons
             let segmentScale = 1;
             let segmentOpacity = 1;
@@ -603,6 +868,31 @@ export default function SnakeGame({ onBack, userProgress, onAddCoins }: SnakeGam
                   <div className="absolute inset-0.5 flex items-center justify-center text-sm z-10 select-none drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                     🪸
                   </div>
+                )}
+
+                {/* Render Predator Head and Tail Segments */}
+                {isPredator && !isSnake && !isFood && !isObstacle && (
+                  <motion.div
+                    animate={isPredatorHead ? { scale: [0.9, 1.1, 0.9] } : {}}
+                    transition={isPredatorHead ? { repeat: Infinity, duration: 1.5, ease: 'easeInOut' } : undefined}
+                    className="absolute inset-0.5 rounded-full flex items-center justify-center z-10 select-none shadow-xs"
+                    style={{
+                      background: isPredatorHead
+                        ? `linear-gradient(135deg, ${foundPredator?.color || '#A855F7'}, #1E1B4B)`
+                        : 'linear-gradient(135deg, #4C1D95, #1E1B4B)',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      opacity: Math.max(0.4, 1 - predatorSegmentIndex * 0.25),
+                      transform: `scale(${Math.max(0.65, 1 - predatorSegmentIndex * 0.15)})`
+                    }}
+                  >
+                    {isPredatorHead ? (
+                      <span className="text-xs">
+                        {foundPredator?.emoji || '🦈'}
+                      </span>
+                    ) : (
+                      <div className="w-1 h-1 rounded-full bg-white/40" />
+                    )}
+                  </motion.div>
                 )}
 
                 {/* Render Food Items with customized models */}

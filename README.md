@@ -1,6 +1,6 @@
-# 🌊 OceanGames By Philemon Osei Kusi
+# 🌊 OceanGames
 
-> An immersive, high-fidelity deep-sea arcade campaign and games hub. Seamlessly runs as a high-performance React SPA via Vite and is fully structured for mobile devices with React Native & Expo.Project made by Philemon Osei Kusi
+> An immersive, high-fidelity deep-sea arcade campaign and games hub. Seamlessly runs as a high-performance React SPA via Vite and is fully structured for mobile devices with React Native & Expo.
 
 ---
 
@@ -124,5 +124,3 @@ npx expo start
 *   **Offline-First Storage**: Standard browser profile data and campaign accomplishments are stored via client-side `localStorage`.
 *   **Elegant Typography**: Hand-crafted layouts utilizing clean typography elements (Inter/JetBrains Mono for statistics).
 *   **Sound Toggle**: Interactive global sound control mechanism which manages synthetic SFX and alerts.
-
-
