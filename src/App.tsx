@@ -27,21 +27,246 @@ import AirplaneShooter from './components/AirplaneShooter';
 import { playSound, triggerHaptic } from './utils/audio';
 
 const GAMES: Game[] = [
-  { id: 'ttt', name: 'Tic-Tac-Toe', phase: 1, meta: 'Playable now', desc: 'Classic 3x3 grid vs a smart defensive AI.', playable: true, plays: 340, releaseDate: '2025-06-01' },
-  { id: 'g2048', name: '2048 Sliders', phase: 1, meta: 'Playable now', desc: 'Slide and merge tiles to reach the glorious 2048.', playable: true, plays: 520, releaseDate: '2025-07-12' },
-  { id: 'rps', name: 'Rock Paper Scissors', phase: 1, meta: 'Playable now', desc: 'Best of five rounds against the Deep Sea Octopus.', playable: true, plays: 180, releaseDate: '2025-08-05' },
-  { id: 'memory', name: 'Memory Match', phase: 1, meta: 'Playable now', desc: 'Flip underwater tiles, find every matching pair.', playable: true, plays: 210, releaseDate: '2025-09-20' },
-  { id: 'whack', name: 'Whack-a-Mole', phase: 1, meta: 'Playable now', desc: 'Tap rapid moles before they submerge back down.', playable: true, plays: 290, releaseDate: '2025-10-15' },
-  { id: 'flappy', name: 'Flappy Dash', phase: 2, meta: 'Playable now', desc: 'Tap to glide between gaps in the deep coral reefs.', playable: true, plays: 460, releaseDate: '2025-11-30' },
-  { id: 'stack', name: 'Stack Tower', phase: 2, meta: 'Playable now', desc: 'Time your drop to stack blocks perfectly into the sky.', playable: true, plays: 150, releaseDate: '2025-12-25' },
-  { id: 'snake', name: 'Ocean Snake', phase: 2, meta: 'Playable now', desc: 'Grow your trail without doubling back or hitting reefs.', playable: true, plays: 380, releaseDate: '2026-02-10' },
-  { id: 'runner', name: 'Endless Runner', phase: 2, meta: 'Playable now', desc: 'Jump over anchors as the speed keeps climbing.', playable: true, plays: 230, releaseDate: '2026-03-05' },
-  { id: 'shooter', name: 'Sky Shooter', phase: 2, meta: 'Playable now', desc: 'Tap to fire bubble torpedos at targets.', playable: true, plays: 190, releaseDate: '2026-04-18' },
-  { id: 'air', name: 'Air Strike 1945', phase: 2, meta: 'Playable now', desc: 'Command a fighter plane to dogfight falling alien invaders.', playable: true, plays: 120, releaseDate: '2026-07-05' },
-  { id: 'sudoku', name: 'Deep Sudoku', phase: 3, meta: 'Playable now', desc: 'Fill the grid, one logical step at a time.', playable: true, plays: 110, releaseDate: '2026-05-12' },
-  { id: 'c4', name: 'Connect Four', phase: 3, meta: 'Playable now', desc: 'Match four colored shells in a row to defeat the AI.', playable: true, plays: 80, releaseDate: '2026-06-01' },
-  { id: 'checkers', name: 'Marine Checkers', phase: 3, meta: 'Playable now', desc: 'Classic checker board strategy, jump and capture.', playable: true, plays: 65, releaseDate: '2026-06-20' },
-  { id: 'pool', name: 'Pocket Pool', phase: 3, meta: 'Playable now', desc: 'Line up shots, bounce shells, sink every ball.', playable: true, plays: 140, releaseDate: '2026-07-01' },
+  { 
+    id: 'ttt', 
+    name: 'Tic-Tac-Toe', 
+    phase: 1, 
+    meta: 'Playable now', 
+    desc: 'Classic 3x3 grid vs a smart defensive AI.', 
+    playable: true, 
+    plays: 340, 
+    releaseDate: '2025-06-01',
+    category: 'Classic',
+    howToPlay: [
+      'Take turns placing your symbol (X or O) on the 3x3 grid.',
+      'Connect three symbols vertically, horizontally, or diagonally.',
+      'Defeat the Ocean AI to claim victory and bonus gold!'
+    ]
+  },
+  { 
+    id: 'g2048', 
+    name: '2048 Sliders', 
+    phase: 1, 
+    meta: 'Playable now', 
+    desc: 'Slide and merge tiles to reach the glorious 2048.', 
+    playable: true, 
+    plays: 520, 
+    releaseDate: '2025-07-12',
+    category: 'Puzzle',
+    howToPlay: [
+      'Swipe or click arrow buttons to slide all tiles on the grid.',
+      'When two tiles with the same number touch, they merge into one!',
+      'Reach the 2048 tile to achieve ultimate victory.'
+    ]
+  },
+  { 
+    id: 'rps', 
+    name: 'Rock Paper Scissors', 
+    phase: 1, 
+    meta: 'Playable now', 
+    desc: 'Best of five rounds against the Deep Sea Octopus.', 
+    playable: true, 
+    plays: 180, 
+    releaseDate: '2025-08-05',
+    category: 'Classic',
+    howToPlay: [
+      'Choose Rock, Paper, or Scissors to challenge the Octopus.',
+      'Rock beats Scissors, Scissors beats Paper, Paper beats Rock.',
+      'First to win 3 rounds takes the ocean bounty!'
+    ]
+  },
+  { 
+    id: 'memory', 
+    name: 'Memory Match', 
+    phase: 1, 
+    meta: 'Playable now', 
+    desc: 'Flip underwater tiles, find every matching pair.', 
+    playable: true, 
+    plays: 210, 
+    releaseDate: '2025-09-20',
+    category: 'Puzzle',
+    howToPlay: [
+      'Flip cards to reveal hidden sea creatures.',
+      'Remember their positions to find matching pairs.',
+      'Complete the deck in the fewest moves to earn bonus gold.'
+    ]
+  },
+  { 
+    id: 'whack', 
+    name: 'Whack-a-Mole', 
+    phase: 1, 
+    meta: 'Playable now', 
+    desc: 'Tap rapid moles before they submerge back down.', 
+    playable: true, 
+    plays: 290, 
+    releaseDate: '2025-10-15',
+    category: 'Classic',
+    howToPlay: [
+      'Tap or click the moles when they jump out of their holes.',
+      'Be quick! Moles stay up for only a fraction of a second.',
+      'Score as many hits as you can before the timer runs out.'
+    ]
+  },
+  { 
+    id: 'flappy', 
+    name: 'Flappy Dash', 
+    phase: 2, 
+    meta: 'Playable now', 
+    desc: 'Tap to glide between gaps in the deep coral reefs.', 
+    playable: true, 
+    plays: 460, 
+    releaseDate: '2025-11-30',
+    category: 'Action',
+    howToPlay: [
+      'Tap the screen or press Spacebar to flap and glide upwards.',
+      'Avoid colliding with the coral reefs and sea floor.',
+      'Pass through the gaps to level up and earn high score multipliers.'
+    ]
+  },
+  { 
+    id: 'stack', 
+    name: 'Stack Tower', 
+    phase: 2, 
+    meta: 'Playable now', 
+    desc: 'Time your drop to stack blocks perfectly into the sky.', 
+    playable: true, 
+    plays: 150, 
+    releaseDate: '2025-12-25',
+    category: 'Classic',
+    howToPlay: [
+      'Tap to release a moving block onto the stack below.',
+      'Align blocks perfectly. Overlapping parts will be sliced off!',
+      'How high can you build before the blocks get too small?'
+    ]
+  },
+  { 
+    id: 'snake', 
+    name: 'Ocean Snake', 
+    phase: 2, 
+    meta: 'Playable now', 
+    desc: 'Grow your trail without doubling back or hitting reefs.', 
+    playable: true, 
+    plays: 380, 
+    releaseDate: '2026-02-10',
+    category: 'Action',
+    howToPlay: [
+      'Steer the Undersea Snake to collect nutrient bubbles.',
+      'Avoid running into reefs, boundaries, or your own tail.',
+      'Collect dynamic shield bubbles and beware of predator fish!'
+    ]
+  },
+  { 
+    id: 'runner', 
+    name: 'Endless Runner', 
+    phase: 2, 
+    meta: 'Playable now', 
+    desc: 'Jump over anchors as the speed keeps climbing.', 
+    playable: true, 
+    plays: 230, 
+    releaseDate: '2026-03-05',
+    category: 'Action',
+    howToPlay: [
+      'Press Space or tap to jump. Press down or swipe to dive.',
+      'Dodge underwater mines, nets, and dangerous reefs.',
+      'Swim as far as you can as the ocean speed accelerates.'
+    ]
+  },
+  { 
+    id: 'shooter', 
+    name: 'Sky Shooter', 
+    phase: 2, 
+    meta: 'Playable now', 
+    desc: 'Tap to fire bubble torpedos at targets.', 
+    playable: true, 
+    plays: 190, 
+    releaseDate: '2026-04-18',
+    category: 'Action',
+    howToPlay: [
+      'Aim your submarine canon at floating target bubbles.',
+      'Tap to fire high-pressure water torpedos.',
+      'Destroy all targets before they submerge.'
+    ]
+  },
+  { 
+    id: 'air', 
+    name: 'Air Strike 1945', 
+    phase: 2, 
+    meta: 'Playable now', 
+    desc: 'Command a fighter plane to dogfight falling alien invaders.', 
+    playable: true, 
+    plays: 120, 
+    releaseDate: '2026-07-05',
+    category: 'Action',
+    howToPlay: [
+      'Drag or use arrow buttons to move your plane across the sky.',
+      'Shoot down waves of incoming hostile space fighters.',
+      'Collect bullet speed-ups and battle the colossal boss!'
+    ]
+  },
+  { 
+    id: 'sudoku', 
+    name: 'Deep Sudoku', 
+    phase: 3, 
+    meta: 'Playable now', 
+    desc: 'Fill the grid, one logical step at a time.', 
+    playable: true, 
+    plays: 110, 
+    releaseDate: '2026-05-12',
+    category: 'Puzzle',
+    howToPlay: [
+      'Fill a 9x9 grid with numbers from 1 to 9.',
+      'Each row, column, and 3x3 block must contain every digit once.',
+      'Use logical deduction to complete the board.'
+    ]
+  },
+  { 
+    id: 'c4', 
+    name: 'Connect Four', 
+    phase: 3, 
+    meta: 'Playable now', 
+    desc: 'Match four colored shells in a row to defeat the AI.', 
+    playable: true, 
+    plays: 80, 
+    releaseDate: '2026-06-01',
+    category: 'Classic',
+    howToPlay: [
+      'Drop your shells down the columns of the board.',
+      'Attempt to connect four of your shells in a row.',
+      'Block the AI opponent from connecting theirs!'
+    ]
+  },
+  { 
+    id: 'checkers', 
+    name: 'Marine Checkers', 
+    phase: 3, 
+    meta: 'Playable now', 
+    desc: 'Classic checker board strategy, jump and capture.', 
+    playable: true, 
+    plays: 65, 
+    releaseDate: '2026-06-20',
+    category: 'Classic',
+    howToPlay: [
+      'Move your shells diagonally across the board.',
+      'Jump over opponent shells to capture and remove them.',
+      'Reach the opposing back row to king your pieces.'
+    ]
+  },
+  { 
+    id: 'pool', 
+    name: 'Pocket Pool', 
+    phase: 3, 
+    meta: 'Playable now', 
+    desc: 'Line up shots, bounce shells, sink every ball.', 
+    playable: true, 
+    plays: 140, 
+    releaseDate: '2026-07-01',
+    category: 'Classic',
+    howToPlay: [
+      'Drag to pull back the cue stick, aiming at the white shell.',
+      'Release to strike the shell and bounce other balls into pockets.',
+      'Sink all numbered balls with the fewest shots possible.'
+    ]
+  }
 ];
 
 const PHASE_COLORS: Record<number, { bg: string; text: string; border: string }> = {
@@ -52,6 +277,34 @@ const PHASE_COLORS: Record<number, { bg: string; text: string; border: string }>
 
 const AVATARS = ['🐙', '🐳', '🐢', '🦈', '🦀', '🦑', '🐠', '🐚', '🐬'];
 
+const SHOP_THEMES = [
+  { value: '#FF6B5D', label: 'Coral Rise 🌸' },
+  { value: '#F5A623', label: 'Amber Glow 🌅' },
+  { value: '#6B4E9E', label: 'Deep Purple 🌌' },
+  { value: '#4E9E6B', label: 'Kelp Forest 🌿' },
+  { value: '#10B981', label: 'Coral Emerald 🏝️' },
+  { value: '#EC4899', label: 'Abyssal Pink 🦑' },
+  { value: '#2563EB', label: 'Deep Sea Blue 🌊' },
+  { value: '#EAB308', label: 'Poseidon Gold 👑' },
+];
+
+const SHOP_AVATARS = [
+  { id: '🐙', name: 'Octo' },
+  { id: '🐳', name: 'Wally' },
+  { id: '🐢', name: 'Shelly' },
+  { id: '🦈', name: 'Bruce' },
+  { id: '🦀', name: 'Barnaby' },
+  { id: '🦑', name: 'Jellie' },
+  { id: '🐠', name: 'Finley' },
+  { id: '🐚', name: 'Sandy' },
+  { id: '🐬', name: 'Dolly' },
+  { id: '👑', name: 'King Neptune' },
+  { id: '🧜‍♀️', name: 'Mermaid Grace' },
+  { id: '🔱', name: 'Ancient Triton' },
+  { id: '🦖', name: 'Leviathan' },
+  { id: '🦕', name: 'Loch Ness' },
+];
+
 export default function App() {
   const [user, setUser] = useState<UserProgress | null>(null);
   const [activeScreen, setActiveScreen] = useState<'hub' | 'ttt' | 'g2048' | 'rps' | 'teaser' | 'snake' | 'flappy' | 'whack' | 'stack' | 'shooter' | 'sudoku' | 'pool' | 'checkers' | 'memory' | 'runner' | 'c4' | 'air'>('hub');
@@ -61,6 +314,53 @@ export default function App() {
   // Search and Category filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPhase, setSelectedPhase] = useState<number | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'Classic' | 'Puzzle' | 'Action'>('all');
+  const [selectedDetailGame, setSelectedDetailGame] = useState<Game | null>(null);
+
+  // Buy Shop items helpers
+  const handleBuyTheme = (colorValue: string, label: string) => {
+    if (!user) return;
+    const cost = 100;
+    const currentUnlocked = user.unlockedColors || ['#FF6B5D', '#F5A623', '#6B4E9E', '#4E9E6B'];
+    if (user.coins >= cost) {
+      playSound('win', user.soundEnabled);
+      triggerHaptic(40, user.hapticEnabled);
+      const nextUnlocked = [...currentUnlocked, colorValue];
+      const nextUser = {
+        ...user,
+        coins: user.coins - cost,
+        unlockedColors: nextUnlocked,
+        themeColor: colorValue
+      };
+      saveProgress(nextUser);
+      addQuestToast(`Unlocked Theme: ${label}!`, 0);
+    } else {
+      playSound('lose', user.soundEnabled);
+      alert(`Insufficient gold! You need 100 🪙 to buy this theme.`);
+    }
+  };
+
+  const handleBuyAvatar = (avatarId: string, name: string) => {
+    if (!user) return;
+    const cost = 150;
+    const currentUnlocked = user.unlockedAvatars || ['🐙', '🐳', '🐢', '🦈', '🦀', '🦑', '🐠', '🐚', '🐬'];
+    if (user.coins >= cost) {
+      playSound('win', user.soundEnabled);
+      triggerHaptic(40, user.hapticEnabled);
+      const nextUnlocked = [...currentUnlocked, avatarId];
+      const nextUser = {
+        ...user,
+        coins: user.coins - cost,
+        unlockedAvatars: nextUnlocked,
+        avatar: avatarId
+      };
+      saveProgress(nextUser);
+      addQuestToast(`Unlocked Mascot: ${avatarId} ${name}!`, 0);
+    } else {
+      playSound('lose', user.soundEnabled);
+      alert(`Insufficient gold! You need 150 🪙 to buy this mascot.`);
+    }
+  };
 
   // Sort By state ('name' | 'played' | 'newest')
   const [sortBy, setSortBy] = useState<'name' | 'played' | 'newest'>('name');
@@ -273,7 +573,8 @@ export default function App() {
     const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           game.desc.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPhase = selectedPhase === 'all' || game.phase === selectedPhase;
-    return matchesSearch && matchesPhase;
+    const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory;
+    return matchesSearch && matchesPhase && matchesCategory;
   }).sort((a, b) => {
     if (sortBy === 'name') {
       return a.name.localeCompare(b.name);
@@ -441,32 +742,66 @@ export default function App() {
                               </div>
                             </div>
 
-                            {/* Phase filter category tabs */}
-                            <div className="flex gap-1.5 overflow-x-auto pb-1" id="phase_filters">
-                              <button
-                                onClick={() => setSelectedPhase('all')}
-                                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                                  selectedPhase === 'all'
-                                    ? 'bg-ink text-white shadow-xs'
-                                    : 'bg-surface border border-line text-ink-soft hover:bg-line/20'
-                                }`}
-                              >
-                                All Releases
-                              </button>
-                              {[1, 2, 3].map((ph) => (
+                            {/* Dual Filter Panel: Genres & Release Phases */}
+                            <div className="space-y-2 pb-0.5" id="dual_filter_panel">
+                              {/* Category/Genre Tabs */}
+                              <div className="flex gap-1.5 overflow-x-auto" id="category_genre_filters">
+                                {([
+                                  { id: 'all', label: 'All Games 🎮' },
+                                  { id: 'Action', label: 'Action ⚔️' },
+                                  { id: 'Puzzle', label: 'Puzzle 🧩' },
+                                  { id: 'Classic', label: 'Classics 🎲' },
+                                ] as const).map((cat) => (
+                                  <button
+                                    key={cat.id}
+                                    onClick={() => {
+                                      playSound('tap', user?.soundEnabled);
+                                      setSelectedCategory(cat.id);
+                                    }}
+                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                                      selectedCategory === cat.id
+                                        ? 'bg-ink text-white shadow-xs'
+                                        : 'bg-surface border border-line text-ink-soft hover:bg-line/20'
+                                    }`}
+                                  >
+                                    {cat.label}
+                                  </button>
+                                ))}
+                              </div>
+
+                              {/* Phase release pills */}
+                              <div className="flex gap-1.5 overflow-x-auto pb-1" id="phase_filters">
                                 <button
-                                  key={ph}
-                                  onClick={() => setSelectedPhase(ph)}
-                                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
-                                    selectedPhase === ph
-                                      ? 'bg-ink text-white shadow-xs'
+                                  onClick={() => {
+                                    playSound('tap', user?.soundEnabled);
+                                    setSelectedPhase('all');
+                                  }}
+                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
+                                    selectedPhase === 'all'
+                                      ? 'bg-ink/5 border border-ink text-ink shadow-xs'
                                       : 'bg-surface border border-line text-ink-soft hover:bg-line/20'
                                   }`}
                                 >
-                                  <span className={`w-1.5 h-1.5 rounded-full ${ph === 1 ? 'bg-coral' : ph === 2 ? 'bg-amber' : 'bg-purple'}`} />
-                                  Phase {ph}
+                                  All Releases
                                 </button>
-                              ))}
+                                {[1, 2, 3].map((ph) => (
+                                  <button
+                                    key={ph}
+                                    onClick={() => {
+                                      playSound('tap', user?.soundEnabled);
+                                      setSelectedPhase(ph);
+                                    }}
+                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
+                                      selectedPhase === ph
+                                        ? 'bg-ink/5 border border-ink text-ink shadow-xs'
+                                        : 'bg-surface border border-line text-ink-soft hover:bg-line/20'
+                                    }`}
+                                  >
+                                    <span className={`w-1.5 h-1.5 rounded-full ${ph === 1 ? 'bg-coral' : ph === 2 ? 'bg-amber' : 'bg-purple'}`} />
+                                    Phase {ph}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
                           </div>
 
@@ -540,7 +875,11 @@ export default function App() {
                                       key={game.id}
                                       whileHover={{ y: -2, boxShadow: '0 4px 12px rgba(43,31,46,0.06)' }}
                                       whileTap={{ scale: 0.96 }}
-                                      onClick={() => handleLaunchGame(game)}
+                                      onClick={() => {
+                                        playSound('tap', user?.soundEnabled);
+                                        triggerHaptic(15, user?.hapticEnabled);
+                                        setSelectedDetailGame(game);
+                                      }}
                                       className="bg-surface border border-line hover:border-coral/40 rounded-3xl overflow-hidden cursor-pointer shadow-xs transition-all relative flex flex-col justify-between"
                                     >
                                       {/* Top Accent Strip with Brand Colors */}
@@ -662,123 +1001,215 @@ export default function App() {
                         </div>
                       )}
 
-                      {activeTab === 'settings' && (
-                        <div className="flex-1 flex flex-col overflow-hidden pb-24" id="tab_settings_view">
-                          <div className="mb-4">
-                            <h2 className="font-display font-extrabold text-xl text-ink">Gamer Settings</h2>
-                            <p className="text-xs text-ink-soft">Adjust audio preferences, customize accents, or reset scores.</p>
-                          </div>
-
-                          <div className="space-y-4 overflow-y-auto flex-1 pb-4" id="settings_container">
-                            
-                            {/* React Native Expo Specs Card */}
-                            <div className="bg-gradient-to-br from-[#1e1b4b]/80 to-[#0f172a]/90 border border-indigo-500/25 rounded-2xl p-4 space-y-2.5 shadow-md text-left" id="expo_specs_card">
-                              <div className="flex items-center justify-between">
-                                <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1">📱 Expo Mobile Active</h4>
-                                <span className="bg-indigo-500/10 text-indigo-300 text-[9px] font-black px-1.5 py-0.5 rounded border border-indigo-500/30">SDK 51</span>
-                              </div>
-                              <p className="text-[10px] text-slate-300 leading-normal font-bold">
-                                This dashboard workspace is fully optimized for React Native and Expo Go compatibility.
-                              </p>
-                              <div className="bg-black/40 p-2.5 rounded-xl border border-slate-800/60 font-mono text-[9px] text-indigo-300 space-y-1">
-                                <p className="text-slate-500"># Launch Expo Metro Bundler</p>
-                                <p><span className="text-amber-400">npx</span> expo start</p>
-                                <p className="text-slate-500 mt-1"># Build iOS/Android Binaries</p>
-                                <p><span className="text-amber-400">npx</span> eas build --platform all</p>
-                              </div>
+                      {activeTab === 'settings' && (() => {
+                        const unlockedAvatars = user.unlockedAvatars || ['🐙', '🐳', '🐢', '🦈', '🦀', '🦑', '🐠', '🐚', '🐬'];
+                        const unlockedColors = user.unlockedColors || ['#FF6B5D', '#F5A623', '#6B4E9E', '#4E9E6B'];
+                        return (
+                          <div className="flex-1 flex flex-col overflow-hidden pb-24" id="tab_settings_view">
+                            <div className="mb-4">
+                              <h2 className="font-display font-extrabold text-xl text-ink">Profile & Prize Shop</h2>
+                              <p className="text-xs text-ink-soft">Purchase premium themes, legendary avatars, or adjust preferences.</p>
                             </div>
 
-                            {/* Sound & Haptics toggle card */}
-                            <div className="bg-surface border border-line rounded-2xl p-4 space-y-3.5 shadow-xs">
-                              <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider">Device Toggles</h4>
+                            <div className="space-y-4 overflow-y-auto flex-1 pb-4" id="settings_container">
                               
-                              <div className="flex items-center justify-between">
+                              {/* React Native Expo Specs Card */}
+                              <div className="bg-gradient-to-br from-[#1e1b4b]/80 to-[#0f172a]/90 border border-indigo-500/25 rounded-2xl p-4 space-y-2.5 shadow-md text-left" id="expo_specs_card">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="text-xs font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1">📱 Expo Mobile Active</h4>
+                                  <span className="bg-indigo-500/10 text-indigo-300 text-[9px] font-black px-1.5 py-0.5 rounded border border-indigo-500/30">SDK 51</span>
+                                </div>
+                                <p className="text-[10px] text-slate-300 leading-normal font-bold">
+                                  This dashboard workspace is fully optimized for React Native and Expo Go compatibility.
+                                </p>
+                                <div className="bg-black/40 p-2.5 rounded-xl border border-slate-800/60 font-mono text-[9px] text-indigo-300 space-y-1">
+                                  <p className="text-slate-500"># Launch Expo Metro Bundler</p>
+                                  <p><span className="text-amber-400">npx</span> expo start</p>
+                                  <p className="text-slate-500 mt-1"># Build iOS/Android Binaries</p>
+                                  <p><span className="text-amber-400">npx</span> eas build --platform all</p>
+                                </div>
+                              </div>
+
+                              {/* Sound & Haptics toggle card */}
+                              <div className="bg-surface border border-line rounded-2xl p-4 space-y-3.5 shadow-xs">
+                                <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider">Device Toggles</h4>
+                                
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <p className="text-xs font-bold text-ink">Sound FX Synth</p>
+                                    <p className="text-[9px] font-semibold text-ink-soft">Procedural game melody generator</p>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      const next = { ...user, soundEnabled: !user.soundEnabled };
+                                      saveProgress(next);
+                                      playSound('tap', next.soundEnabled);
+                                    }}
+                                    className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer ${user.soundEnabled ? 'bg-success' : 'bg-line'}`}
+                                  >
+                                    <div className={`w-5.5 h-5.5 rounded-full bg-white absolute top-0.5 transition-transform ${user.soundEnabled ? 'right-0.5' : 'left-0.5'}`} />
+                                  </button>
+                                </div>
+
+                                <div className="flex items-center justify-between border-t border-line/40 pt-3">
+                                  <div>
+                                    <p className="text-xs font-bold text-ink">Haptic Vibration</p>
+                                    <p className="text-[9px] font-semibold text-ink-soft">Tactile web-vibration response</p>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      const next = { ...user, hapticEnabled: !user.hapticEnabled };
+                                      saveProgress(next);
+                                      triggerHaptic(20, next.hapticEnabled);
+                                    }}
+                                    className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer ${user.hapticEnabled ? 'bg-success' : 'bg-line'}`}
+                                  >
+                                    <div className={`w-5.5 h-5.5 rounded-full bg-white absolute top-0.5 transition-transform ${user.hapticEnabled ? 'right-0.5' : 'left-0.5'}`} />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Profile customizer card */}
+                              <div className="bg-surface border border-line rounded-2xl p-4 space-y-3 shadow-xs">
+                                <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider">Mascot Settings</h4>
+                                
+                                <div className="flex gap-2 items-center">
+                                  <label className="text-xs font-bold text-ink">Nickname:</label>
+                                  <input
+                                    type="text"
+                                    maxLength={12}
+                                    value={user.nickname}
+                                    onChange={(e) => {
+                                      const next = { ...user, nickname: e.target.value };
+                                      saveProgress(next);
+                                    }}
+                                    className="flex-1 bg-bg border border-line focus:border-coral rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none"
+                                  />
+                                </div>
+
+                                <div className="space-y-1">
+                                  <p className="text-[10px] font-bold text-ink-soft">Select Mascot Avatar (Unlocked):</p>
+                                  <div className="flex gap-1.5 overflow-x-auto py-1">
+                                    {unlockedAvatars.map((av) => (
+                                      <button
+                                        key={av}
+                                        onClick={() => {
+                                          playSound('tap', user.soundEnabled);
+                                          const next = { ...user, avatar: av };
+                                          saveProgress(next);
+                                        }}
+                                        className={`w-10 h-10 rounded-xl border flex items-center justify-center text-xl transition-all shrink-0 cursor-pointer ${
+                                          user.avatar === av 
+                                            ? 'bg-coral/10 border-coral ring-2 ring-coral/20' 
+                                            : 'bg-bg border-line'
+                                        }`}
+                                      >
+                                        {av}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Ocean Prize Shop Card */}
+                              <div className="bg-surface border border-line rounded-2xl p-4 space-y-4 shadow-xs" id="prize_shop_panel">
                                 <div>
-                                  <p className="text-xs font-bold text-ink">Sound FX Synth</p>
-                                  <p className="text-[9px] font-semibold text-ink-soft">Procedural game melody generator</p>
+                                  <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider flex items-center gap-1.5">
+                                    <span>🛒</span> Undersea Prize Shop
+                                  </h4>
+                                  <p className="text-[10px] text-ink-soft font-semibold leading-tight mt-0.5">
+                                    Spend your earned Gold Coins to unlock premium themes & legendary avatars!
+                                  </p>
                                 </div>
-                                <button
-                                  onClick={() => {
-                                    const next = { ...user, soundEnabled: !user.soundEnabled };
-                                    saveProgress(next);
-                                    playSound('tap', next.soundEnabled);
-                                  }}
-                                  className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer ${user.soundEnabled ? 'bg-success' : 'bg-line'}`}
-                                >
-                                  <div className={`w-5.5 h-5.5 rounded-full bg-white absolute top-0.5 transition-transform ${user.soundEnabled ? 'right-0.5' : 'left-0.5'}`} />
-                                </button>
+
+                                {/* Accent Themes */}
+                                <div className="space-y-2">
+                                  <p className="text-[9px] font-black text-ink-soft/80 uppercase tracking-widest">Premium Theme Accents (100 🪙)</p>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {SHOP_THEMES.map((theme) => {
+                                      const isUnlocked = unlockedColors.includes(theme.value);
+                                      const isActive = user.themeColor === theme.value;
+                                      return (
+                                        <button
+                                          key={theme.value}
+                                          onClick={() => {
+                                            if (isUnlocked) {
+                                              playSound('tap', user.soundEnabled);
+                                              const next = { ...user, themeColor: theme.value };
+                                              saveProgress(next);
+                                            } else {
+                                              handleBuyTheme(theme.value, theme.label);
+                                            }
+                                          }}
+                                          className={`p-2 rounded-xl border flex items-center gap-2 text-left cursor-pointer transition-all ${
+                                            isActive 
+                                              ? 'bg-ink/5 border-ink' 
+                                              : 'bg-bg border-line hover:border-ink/20'
+                                          }`}
+                                        >
+                                          <div className="w-4 h-4 rounded-full shrink-0 border border-black/10" style={{ backgroundColor: theme.value }} />
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] font-extrabold text-ink truncate leading-none">{theme.label}</p>
+                                            <p className="text-[8px] font-bold text-ink-soft leading-none mt-1">
+                                              {isActive ? 'Selected' : isUnlocked ? 'Use theme' : '100 🪙'}
+                                            </p>
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+
+                                {/* Legendary Avatars */}
+                                <div className="space-y-2 pt-2 border-t border-line/40">
+                                  <p className="text-[9px] font-black text-ink-soft/80 uppercase tracking-widest">Legendary Mascot Avatars (150 🪙)</p>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    {SHOP_AVATARS.map((item) => {
+                                      const isUnlocked = unlockedAvatars.includes(item.id);
+                                      const isActive = user.avatar === item.id;
+                                      return (
+                                        <button
+                                          key={item.id}
+                                          onClick={() => {
+                                            if (isUnlocked) {
+                                              playSound('tap', user.soundEnabled);
+                                              const next = { ...user, avatar: item.id };
+                                              saveProgress(next);
+                                            } else {
+                                              handleBuyAvatar(item.id, item.name);
+                                            }
+                                          }}
+                                          className={`p-2 rounded-xl border flex items-center gap-2 text-left cursor-pointer transition-all ${
+                                            isActive 
+                                              ? 'bg-ink/5 border-ink' 
+                                              : 'bg-bg border-line hover:border-ink/20'
+                                          }`}
+                                        >
+                                          <span className="text-lg shrink-0 leading-none">{item.id}</span>
+                                          <div className="flex-1 min-w-0">
+                                            <p className="text-[10px] font-extrabold text-ink truncate leading-none">{item.name}</p>
+                                            <p className="text-[8px] font-bold text-ink-soft leading-none mt-1">
+                                              {isActive ? 'Active' : isUnlocked ? 'Select' : '150 🪙'}
+                                            </p>
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
                               </div>
 
-                              <div className="flex items-center justify-between border-t border-line/40 pt-3">
-                                <div>
-                                  <p className="text-xs font-bold text-ink">Haptic Vibration</p>
-                                  <p className="text-[9px] font-semibold text-ink-soft">Tactile web-vibration response</p>
-                                </div>
-                                <button
-                                  onClick={() => {
-                                    const next = { ...user, hapticEnabled: !user.hapticEnabled };
-                                    saveProgress(next);
-                                    triggerHaptic(20, next.hapticEnabled);
-                                  }}
-                                  className={`w-12 h-6.5 rounded-full transition-colors relative cursor-pointer ${user.hapticEnabled ? 'bg-success' : 'bg-line'}`}
-                                >
-                                  <div className={`w-5.5 h-5.5 rounded-full bg-white absolute top-0.5 transition-transform ${user.hapticEnabled ? 'right-0.5' : 'left-0.5'}`} />
-                                </button>
-                              </div>
+                              {/* Reset state card */}
+                              <button
+                                onClick={resetProgress}
+                                className="w-full bg-coral/10 border border-coral/30 hover:bg-coral/20 text-coral font-display font-extrabold text-xs py-3.5 rounded-2xl transition-colors cursor-pointer"
+                              >
+                                Reset Gamer Progress
+                              </button>
                             </div>
-
-                            {/* Profile customizer card */}
-                            <div className="bg-surface border border-line rounded-2xl p-4 space-y-3 shadow-xs">
-                              <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider">Mascot Settings</h4>
-                              
-                              <div className="flex gap-2 items-center">
-                                <label className="text-xs font-bold text-ink">Nickname:</label>
-                                <input
-                                  type="text"
-                                  maxLength={12}
-                                  value={user.nickname}
-                                  onChange={(e) => {
-                                    const next = { ...user, nickname: e.target.value };
-                                    saveProgress(next);
-                                  }}
-                                  className="flex-1 bg-bg border border-line focus:border-coral rounded-xl px-2.5 py-1.5 text-xs font-bold outline-none"
-                                />
-                              </div>
-
-                              <div className="space-y-1">
-                                <p className="text-[10px] font-bold text-ink-soft">Select Mascot Avatar:</p>
-                                <div className="flex gap-1.5 overflow-x-auto py-1">
-                                  {AVATARS.map((av) => (
-                                    <button
-                                      key={av}
-                                      onClick={() => {
-                                        playSound('tap', user.soundEnabled);
-                                        const next = { ...user, avatar: av };
-                                        saveProgress(next);
-                                      }}
-                                      className={`w-10 h-10 rounded-xl border flex items-center justify-center text-xl transition-all shrink-0 cursor-pointer ${
-                                        user.avatar === av 
-                                          ? 'bg-coral/10 border-coral ring-2 ring-coral/20' 
-                                          : 'bg-bg border-line'
-                                      }`}
-                                    >
-                                      {av}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Reset state card */}
-                            <button
-                              onClick={resetProgress}
-                              className="w-full bg-coral/10 border border-coral/30 hover:bg-coral/20 text-coral font-display font-extrabold text-xs py-3.5 rounded-2xl transition-colors cursor-pointer"
-                            >
-                              Reset Gamer Progress
-                            </button>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* Floating Bottom Nav Rail bar */}
                       <div className="absolute bottom-5 left-5 right-5 h-16 bg-[#2B1F2E] border border-line/10 rounded-3xl p-2.5 flex justify-between items-center shadow-lg z-30" id="bottom_navbar">
@@ -818,9 +1249,119 @@ export default function App() {
                           }`}
                         >
                           <Settings className="w-5 h-5" />
-                          <span className="text-[8px] uppercase tracking-wider leading-none">Settings</span>
+                          <span className="text-[8px] uppercase tracking-wider leading-none">Shop</span>
                         </button>
                       </div>
+
+                      {/* Game Details bottom sheet drawer overlay */}
+                      <AnimatePresence>
+                        {selectedDetailGame && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-xs z-50 flex flex-col justify-end"
+                            onClick={() => setSelectedDetailGame(null)}
+                            id="details_sheet_backdrop"
+                          >
+                            <motion.div
+                              initial={{ y: '100%' }}
+                              animate={{ y: 0 }}
+                              exit={{ y: '100%' }}
+                              transition={{ type: 'spring', damping: 28, stiffness: 240 }}
+                              className="bg-bg rounded-t-[32px] border-t-4 p-5 text-left max-h-[85%] flex flex-col pointer-events-auto overflow-hidden relative shadow-2xl"
+                              style={{ borderColor: accentColor }}
+                              onClick={(e) => e.stopPropagation()}
+                              id="details_sheet_panel"
+                            >
+                              {/* Pull Indicator Bar */}
+                              <div className="w-12 h-1 bg-ink-soft/30 rounded-full mx-auto mb-4" />
+
+                              {/* Title Block */}
+                              <div className="flex gap-4 items-start mb-4">
+                                <div className={`w-14 h-14 rounded-2xl ${PHASE_COLORS[selectedDetailGame.phase]?.bg || 'bg-line/20'} flex items-center justify-center shrink-0 shadow-inner`}>
+                                  {getGameIcon(selectedDetailGame.id, `w-7 h-7 ${PHASE_COLORS[selectedDetailGame.phase]?.text || 'text-ink'}`)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="font-display font-black text-lg text-ink leading-tight truncate">
+                                      {selectedDetailGame.name}
+                                    </h3>
+                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md border uppercase tracking-wider ${PHASE_COLORS[selectedDetailGame.phase]?.bg || 'bg-line/20'} ${PHASE_COLORS[selectedDetailGame.phase]?.text || 'text-ink-soft'}`}>
+                                      Phase {selectedDetailGame.phase}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-ink-soft font-bold mt-0.5">
+                                    Genre: {selectedDetailGame.category || 'Classic'}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Score & Plays quick badges */}
+                              <div className="grid grid-cols-2 gap-3 mb-4">
+                                <div className="bg-surface border border-line rounded-xl p-2.5 flex flex-col justify-center">
+                                  <span className="text-[9px] font-black text-ink-soft uppercase tracking-widest leading-none">Your High Score</span>
+                                  <span className="text-xs font-black text-ink mt-1.5 leading-none">
+                                    {user?.highScores?.[selectedDetailGame.id] ?? '0'} XP
+                                  </span>
+                                </div>
+                                <div className="bg-surface border border-line rounded-xl p-2.5 flex flex-col justify-center">
+                                  <span className="text-[9px] font-black text-ink-soft uppercase tracking-widest leading-none">Popularity</span>
+                                  <span className="text-xs font-black text-ink mt-1.5 leading-none">
+                                    {gamePlays[selectedDetailGame.id] ?? selectedDetailGame.plays ?? 0} plays
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Description */}
+                              <div className="mb-4 bg-surface/50 border border-line/50 p-3 rounded-xl">
+                                <h4 className="text-[9px] font-black uppercase tracking-widest text-ink-soft mb-1">Game Overview</h4>
+                                <p className="text-xs leading-relaxed text-ink-soft font-bold">
+                                  {selectedDetailGame.desc}
+                                </p>
+                              </div>
+
+                              {/* How to Play Bullet List */}
+                              <div className="mb-4 flex-1 overflow-y-auto pr-1">
+                                <h4 className="text-[9px] font-black uppercase tracking-widest text-ink-soft mb-2.5">How to Play</h4>
+                                <ul className="space-y-2 text-xs font-bold text-ink-soft leading-relaxed">
+                                  {selectedDetailGame.howToPlay?.map((rule, idx) => (
+                                    <li key={idx} className="flex gap-2.5 items-start">
+                                      <span className="w-5 h-5 rounded-full bg-coral/15 text-coral flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">
+                                        {idx + 1}
+                                      </span>
+                                      <span className="flex-1 mt-0.5">{rule}</span>
+                                    </li>
+                                  )) || (
+                                    <li className="italic text-ink-soft/60">Standard classic rules apply. Avoid hitting walls or boundaries.</li>
+                                  )}
+                                </ul>
+                              </div>
+
+                              {/* Bottom CTA buttons */}
+                              <div className="flex gap-3 pt-3 border-t border-line/40 shrink-0">
+                                <button
+                                  onClick={() => setSelectedDetailGame(null)}
+                                  className="flex-1 bg-surface border border-line hover:bg-line/20 text-ink font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
+                                >
+                                  Close
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const g = selectedDetailGame;
+                                    setSelectedDetailGame(null);
+                                    handleLaunchGame(g);
+                                  }}
+                                  className="flex-1 text-white font-display font-extrabold text-xs py-3 rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
+                                  style={{ backgroundColor: accentColor }}
+                                >
+                                  Launch Game <ChevronRight className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
                     </div>
                   )}

@@ -8,6 +8,8 @@ export interface Game {
   costToUnlock?: number;
   plays?: number;
   releaseDate?: string;
+  category?: 'Classic' | 'Puzzle' | 'Action';
+  howToPlay?: string[];
 }
 
 export interface UserProgress {
@@ -21,4 +23,6 @@ export interface UserProgress {
   soundEnabled: boolean;
   hapticEnabled: boolean;
   streak: number;
+  unlockedColors?: string[];
+  unlockedAvatars?: string[];
 }
