@@ -4,7 +4,8 @@ import {
   Gamepad2, Search, Settings, ShieldCheck, HelpCircle, 
   Sparkles, Volume2, VolumeX, Smartphone, Trophy, Award, 
   TrendingUp, Compass, Flame, Info, CheckCircle2, ChevronRight, Check,
-  Grid3x3, Binary, Scissors, Brain, Hammer, Wind, Layers, Route, Footprints, Rocket, Plane, Hash, Disc, Crown, CircleDot
+  Grid3x3, Binary, Scissors, Brain, Hammer, Wind, Layers, Route, Footprints, Rocket, Plane, Hash, Disc, Crown, CircleDot,
+  Star, Gift, X, RotateCcw
 } from 'lucide-react';
 import { Game, UserProgress } from './types';
 import Onboarding from './components/Onboarding';
@@ -314,8 +315,46 @@ export default function App() {
   // Search and Category filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPhase, setSelectedPhase] = useState<number | 'all'>('all');
-  const [selectedCategory, setSelectedCategory] = useState<'all' | 'Classic' | 'Puzzle' | 'Action'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<'all' | 'Favorites' | 'Classic' | 'Puzzle' | 'Action'>('all');
   const [selectedDetailGame, setSelectedDetailGame] = useState<Game | null>(null);
+
+  // Daily Wheel & Favorite State
+  const [showDailySpin, setShowDailySpin] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
+  const [spunPrize, setSpunPrize] = useState<number | null>(null);
+
+  const toggleFavorite = (gameId: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!user) return;
+    playSound('tap', user.soundEnabled);
+    triggerHaptic(15, user.hapticEnabled);
+    const currentFavs = user.favorites || [];
+    const exists = currentFavs.includes(gameId);
+    const nextFavs = exists ? currentFavs.filter((id) => id !== gameId) : [...currentFavs, gameId];
+    const nextUser = { ...user, favorites: nextFavs };
+    saveProgress(nextUser);
+  };
+
+  const handleDailySpin = () => {
+    if (!user || isSpinning) return;
+    setIsSpinning(true);
+    playSound('tap', user.soundEnabled);
+    triggerHaptic(20, user.hapticEnabled);
+
+    const prizes = [20, 35, 50, 75, 100];
+    const won = prizes[Math.floor(Math.random() * prizes.length)];
+
+    setTimeout(() => {
+      setIsSpinning(false);
+      setSpunPrize(won);
+      playSound('win', user.soundEnabled);
+      triggerHaptic(40, user.hapticEnabled);
+      handleAddCoins(won);
+      const today = new Date().toISOString().slice(0, 10);
+      saveProgress({ ...user, lastDailySpin: today });
+      completeQuest('spin_wheel');
+    }, 1800);
+  };
 
   // Buy Shop items helpers
   const handleBuyTheme = (colorValue: string, label: string) => {
@@ -573,7 +612,12 @@ export default function App() {
     const matchesSearch = game.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           game.desc.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPhase = selectedPhase === 'all' || game.phase === selectedPhase;
-    const matchesCategory = selectedCategory === 'all' || game.category === selectedCategory;
+    const isFav = (user?.favorites || []).includes(game.id);
+    const matchesCategory = selectedCategory === 'all' 
+      ? true 
+      : selectedCategory === 'Favorites' 
+      ? isFav 
+      : game.category === selectedCategory;
     return matchesSearch && matchesPhase && matchesCategory;
   }).sort((a, b) => {
     if (sortBy === 'name') {
@@ -594,11 +638,14 @@ export default function App() {
   const accentColor = user?.themeColor || '#FF6B5D';
 
   return (
-    <div className="min-h-screen bg-ink flex items-center justify-center p-0 sm:p-4 md:p-6 select-none" id="app_viewport">
+    <div className="min-h-screen bg-[#120D16] flex items-center justify-center p-0 sm:p-4 md:p-6 select-none relative overflow-hidden" id="app_viewport">
+      {/* Background Ambient Ocean Glows */}
+      <div className="absolute -top-40 -left-40 w-96 h-96 bg-[#FF6B5D]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-[#6B4E9E]/15 rounded-full blur-3xl pointer-events-none" />
       
       {/* Handheld Device Frame for immersive mobile gaming feeling */}
       <div 
-        className="w-full h-screen sm:h-[840px] sm:max-w-[430px] sm:rounded-[48px] bg-ink sm:border-8 sm:border-line shadow-2xl relative overflow-hidden flex flex-col transition-all duration-300"
+        className="w-full h-screen sm:h-[850px] sm:max-w-[430px] sm:rounded-[48px] bg-ink sm:border-8 sm:border-line shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] relative overflow-hidden flex flex-col transition-all duration-300"
         style={{ borderColor: accentColor }}
         id="phone_simulator"
       >
@@ -694,15 +741,31 @@ export default function App() {
                           </p>
                         </div>
 
-                        {/* Gold coin balance readout */}
-                        <motion.div 
-                          whileTap={{ scale: 0.95 }}
-                          className="flex items-center gap-1.5 bg-surface border border-line rounded-full py-1.5 px-3.5 shadow-sm font-display font-extrabold text-sm text-ink-soft"
-                          id="coin_pouch"
-                        >
-                          <span className="text-amber animate-pulse">🪙</span>
-                          <span className="text-ink font-sans font-black">{user.coins}</span>
-                        </motion.div>
+                        <div className="flex items-center gap-2">
+                          {/* Daily Wheel Spin Gift button */}
+                          <motion.button
+                            whileTap={{ scale: 0.9 }}
+                            onClick={() => {
+                              playSound('tap', user.soundEnabled);
+                              setShowDailySpin(true);
+                              setSpunPrize(null);
+                            }}
+                            className="flex items-center gap-1 bg-amber/15 border border-amber/30 text-amber-700 dark:text-amber-400 rounded-full py-1.5 px-2.5 text-[10px] font-black uppercase tracking-wider cursor-pointer shadow-xs hover:bg-amber/25 transition-all"
+                          >
+                            <Gift className="w-3.5 h-3.5 text-amber animate-bounce" />
+                            <span>Wheel</span>
+                          </motion.button>
+
+                          {/* Gold coin balance readout */}
+                          <motion.div 
+                            whileTap={{ scale: 0.95 }}
+                            className="flex items-center gap-1.5 bg-surface border border-line rounded-full py-1.5 px-3.5 shadow-sm font-display font-extrabold text-sm text-ink-soft"
+                            id="coin_pouch"
+                          >
+                            <span className="text-amber animate-pulse">🪙</span>
+                            <span className="text-ink font-sans font-black">{user.coins}</span>
+                          </motion.div>
+                        </div>
                       </div>
 
                       {/* Dynamic Tab Selector (Arcade, Quests, Profile/Settings) */}
@@ -747,7 +810,8 @@ export default function App() {
                               {/* Category/Genre Tabs */}
                               <div className="flex gap-1.5 overflow-x-auto" id="category_genre_filters">
                                 {([
-                                  { id: 'all', label: 'All Games 🎮' },
+                                  { id: 'all', label: 'All 🎮' },
+                                  { id: 'Favorites', label: `Starred ⭐ (${(user?.favorites || []).length})` },
                                   { id: 'Action', label: 'Action ⚔️' },
                                   { id: 'Puzzle', label: 'Puzzle 🧩' },
                                   { id: 'Classic', label: 'Classics 🎲' },
@@ -756,7 +820,7 @@ export default function App() {
                                     key={cat.id}
                                     onClick={() => {
                                       playSound('tap', user?.soundEnabled);
-                                      setSelectedCategory(cat.id);
+                                      setSelectedCategory(cat.id as any);
                                     }}
                                     className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                                       selectedCategory === cat.id
@@ -870,6 +934,7 @@ export default function App() {
                               ) : filteredGames.length > 0 ? (
                                 filteredGames.map((game) => {
                                   const config = PHASE_COLORS[game.phase] || { bg: 'bg-line/30', text: 'text-ink-soft', border: 'border-line' };
+                                  const isFav = (user?.favorites || []).includes(game.id);
                                   return (
                                     <motion.div
                                       key={game.id}
@@ -885,26 +950,35 @@ export default function App() {
                                       {/* Top Accent Strip with Brand Colors */}
                                       <div className={`h-1.5 w-full ${game.phase === 1 ? 'bg-coral' : game.phase === 2 ? 'bg-amber' : 'bg-purple'}`} />
 
-                                      <div className="p-4 flex-1 flex flex-col justify-between">
+                                      <div className="p-3.5 flex-1 flex flex-col justify-between">
                                         <div className="flex justify-between items-start">
                                           <div className={`w-11 h-11 rounded-2xl ${config.bg} flex items-center justify-center shadow-inner`}>
                                             {getGameIcon(game.id, `w-5.5 h-5.5 ${config.text}`)}
                                           </div>
                                           
-                                          <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider ${config.bg} ${config.text} ${config.border}`}>
-                                            P{game.phase}
-                                          </span>
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              onClick={(e) => toggleFavorite(game.id, e)}
+                                              className="w-6 h-6 rounded-full flex items-center justify-center transition-colors cursor-pointer hover:bg-black/5"
+                                              title={isFav ? "Unstar game" : "Star game"}
+                                            >
+                                              <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber text-amber' : 'text-ink-soft/30 hover:text-amber'}`} />
+                                            </button>
+                                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full border uppercase tracking-wider ${config.bg} ${config.text} ${config.border}`}>
+                                              P{game.phase}
+                                            </span>
+                                          </div>
                                         </div>
 
-                                        <div className="mt-4">
-                                          <h3 className="font-display font-extrabold text-sm text-ink line-clamp-1 leading-none mb-1">
+                                        <div className="mt-3">
+                                          <h3 className="font-display font-extrabold text-xs sm:text-sm text-ink line-clamp-1 leading-none mb-1">
                                             {game.name}
                                           </h3>
-                                          <div className="flex items-center justify-between gap-1.5 mt-1">
+                                          <div className="flex items-center justify-between gap-1 mt-1">
                                             <p className="text-[9px] font-bold text-ink-soft/80 leading-tight line-clamp-1">
                                               {game.playable ? game.meta : 'Phase teaser demo'}
                                             </p>
-                                            <span className="text-[8px] font-mono font-bold text-ink-soft/50">
+                                            <span className="text-[8px] font-mono font-bold text-ink-soft/50 shrink-0">
                                               {game.plays ? `${game.plays} plays` : ''}
                                             </span>
                                           </div>
@@ -1358,6 +1432,79 @@ export default function App() {
                                   Launch Game <ChevronRight className="w-4 h-4" />
                                 </button>
                               </div>
+                            </motion.div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Daily Lucky Wheel Modal */}
+                      <AnimatePresence>
+                        {showDailySpin && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/70 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+                            onClick={() => !isSpinning && setShowDailySpin(false)}
+                          >
+                            <motion.div
+                              initial={{ scale: 0.8, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              exit={{ scale: 0.8, opacity: 0 }}
+                              className="bg-surface rounded-3xl border-2 p-5 text-center max-w-[320px] w-full shadow-2xl relative"
+                              style={{ borderColor: accentColor }}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                onClick={() => !isSpinning && setShowDailySpin(false)}
+                                className="absolute top-3 right-3 w-7 h-7 rounded-full bg-line/40 flex items-center justify-center text-ink cursor-pointer hover:bg-line"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+
+                              <div className="w-12 h-12 rounded-full bg-amber/15 border border-amber/30 mx-auto flex items-center justify-center text-2xl mb-2">
+                                🎡
+                              </div>
+
+                              <h3 className="font-display font-black text-lg text-ink mb-1">Daily Lucky Wheel</h3>
+                              <p className="text-[11px] font-bold text-ink-soft leading-tight mb-4">
+                                Spin the oceanic fortune wheel to claim free gold coins!
+                              </p>
+
+                              {/* Wheel Display */}
+                              <div className="relative w-36 h-36 mx-auto mb-4 flex items-center justify-center">
+                                <motion.div
+                                  animate={isSpinning ? { rotate: [0, 1440] } : { rotate: 0 }}
+                                  transition={isSpinning ? { duration: 1.8, ease: 'easeInOut' } : {}}
+                                  className="w-full h-full rounded-full border-4 border-amber border-dashed flex items-center justify-center bg-gradient-to-br from-amber/10 via-purple/10 to-coral/10 relative shadow-inner"
+                                >
+                                  <div className="text-center select-none">
+                                    <Sparkles className="w-7 h-7 text-amber mx-auto animate-pulse" />
+                                    <span className="text-[9px] font-black uppercase text-amber tracking-widest block mt-1">Fortune</span>
+                                  </div>
+                                </motion.div>
+
+                                {/* Pointer */}
+                                <div className="absolute -top-2 left-1/2 -translate-x-1/2 text-sm">
+                                  🔻
+                                </div>
+                              </div>
+
+                              {spunPrize !== null && (
+                                <div className="bg-amber/10 border border-amber/30 rounded-2xl p-3 mb-4 animate-bounce">
+                                  <p className="text-[10px] font-black uppercase text-amber">🎉 You Won!</p>
+                                  <p className="text-lg font-black text-ink mt-0.5">🪙 +{spunPrize} Gold Coins</p>
+                                </div>
+                              )}
+
+                              <button
+                                onClick={handleDailySpin}
+                                disabled={isSpinning}
+                                className="w-full py-3 text-white font-display font-extrabold text-xs rounded-2xl shadow-md cursor-pointer transition-all active:scale-95 disabled:opacity-50"
+                                style={{ backgroundColor: accentColor }}
+                              >
+                                {isSpinning ? 'Spinning Wheel...' : spunPrize !== null ? 'Spin Again!' : 'Spin For Gold Coins!'}
+                              </button>
                             </motion.div>
                           </motion.div>
                         )}

@@ -25,4 +25,6 @@ export interface UserProgress {
   streak: number;
   unlockedColors?: string[];
   unlockedAvatars?: string[];
+  favorites?: string[];
+  lastDailySpin?: string;
 }
