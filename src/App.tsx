@@ -964,13 +964,34 @@ export default function App() {
                           </motion.button>
 
                           {/* Gold Coin Readout */}
-                          <div
+                          <motion.div
+                            key={`coin-pouch-${user.coins}`}
+                            initial={{ scale: 0.92 }}
+                            animate={{ scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                             className="flex items-center gap-1.5 bg-surface border border-line/70 rounded-full py-1.5 px-3 font-sans font-extrabold text-xs text-ink shadow-2xs"
                             id="coin_pouch"
                           >
-                            <span className="text-amber">🪙</span>
-                            <span>{user.coins}</span>
-                          </div>
+                            <motion.span
+                              key={`coin-icon-${user.coins}`}
+                              initial={{ scale: 0.85 }}
+                              animate={{ scale: [1, 1.25, 1] }}
+                              transition={{ duration: 0.3 }}
+                              className="text-amber select-none inline-block"
+                            >
+                              🪙
+                            </motion.span>
+                            <motion.span
+                              key={`coin-count-${user.coins}`}
+                              initial={{ scale: 0.6, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ type: 'spring', stiffness: 450, damping: 18 }}
+                              className="inline-block"
+                              id="coin_count_value"
+                            >
+                              {user.coins}
+                            </motion.span>
+                          </motion.div>
                         </div>
                       </div>
 
