@@ -23,8 +23,14 @@ export interface UserProgress {
   soundEnabled: boolean;
   hapticEnabled: boolean;
   streak: number;
+  dailyStreak: number;
+  lastLoginDate?: string;
+  claimedStreakDate?: string;
   unlockedColors?: string[];
   unlockedAvatars?: string[];
   favorites?: string[];
   lastDailySpin?: string;
+  serverEngine?: 'unreal' | 'unity';
+  serverRegion?: string;
 }
+

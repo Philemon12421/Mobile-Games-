@@ -62,6 +62,11 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         soundEnabled: true,
         hapticEnabled: true,
         streak: 1,
+        dailyStreak: 1,
+        lastLoginDate: new Date().toISOString().slice(0, 10),
+        claimedStreakDate: new Date().toISOString().slice(0, 10),
+        serverEngine: 'unreal',
+        serverRegion: 'US-East (AWS Virginia)',
         unlockedColors: ['#FF6B5D', '#F5A623', '#6B4E9E', '#4E9E6B'],
         unlockedAvatars: ['🐙', '🐳', '🐢', '🦈', '🦀', '🦑', '🐠', '🐚', '🐬'],
       });

@@ -5,7 +5,7 @@ import {
   Sparkles, Volume2, VolumeX, Smartphone, Trophy, Award, 
   TrendingUp, Compass, Flame, Info, CheckCircle2, ChevronRight, Check,
   Grid3x3, Binary, Scissors, Brain, Hammer, Wind, Layers, Route, Footprints, Rocket, Plane, Hash, Disc, Crown, CircleDot,
-  Star, Gift, X, RotateCcw
+  Star, Gift, X, RotateCcw, Server, Activity, BarChart2
 } from 'lucide-react';
 import { Game, UserProgress } from './types';
 import Onboarding from './components/Onboarding';
@@ -25,6 +25,9 @@ import MemoryMatch from './components/MemoryMatch';
 import EndlessRunner from './components/EndlessRunner';
 import ConnectFour from './components/ConnectFour';
 import AirplaneShooter from './components/AirplaneShooter';
+import LeaderboardModal from './components/LeaderboardModal';
+import DailyStreakModal from './components/DailyStreakModal';
+import EngineServerModal from './components/EngineServerModal';
 import { playSound, triggerHaptic } from './utils/audio';
 
 const GAMES: Game[] = [
@@ -323,6 +326,57 @@ export default function App() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [spunPrize, setSpunPrize] = useState<number | null>(null);
 
+  // Daily Streak, Leaderboard & Engine Server States
+  const [showDailyStreak, setShowDailyStreak] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showEngineServer, setShowEngineServer] = useState(false);
+  const [streakResetNotice, setStreakResetNotice] = useState(false);
+
+  const todayDateStr = new Date().toISOString().slice(0, 10);
+  const canClaimDailyReward = Boolean(user && user.claimedStreakDate !== todayDateStr);
+
+  const handleClaimDailyReward = (day: number, reward: number) => {
+    if (!user) return;
+    const today = new Date().toISOString().slice(0, 10);
+    
+    // Check if consecutive login to increment
+    let nextStreak = user.dailyStreak || 1;
+    if (user.lastLoginDate && user.lastLoginDate !== today) {
+      const d1 = new Date(user.lastLoginDate + 'T00:00:00');
+      const d2 = new Date(today + 'T00:00:00');
+      const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        nextStreak = nextStreak + 1;
+      } else if (diffDays > 1) {
+        nextStreak = 1;
+      }
+    }
+
+    const nextUser: UserProgress = {
+      ...user,
+      dailyStreak: nextStreak,
+      coins: user.coins + reward,
+      lastLoginDate: today,
+      claimedStreakDate: today,
+    };
+
+    saveProgress(nextUser);
+    addQuestToast(`Day ${day} Daily Streak Claimed (+${reward} 🪙 Coins)!`, reward);
+    completeQuest('daily_streak');
+  };
+
+  const handleSelectEngine = (engine: 'unreal' | 'unity') => {
+    if (!user) return;
+    const region = engine === 'unreal' ? 'US-East (AWS Virginia - Dedicated)' : 'EU-Central (Frankfurt - Unity Relay)';
+    const nextUser: UserProgress = {
+      ...user,
+      serverEngine: engine,
+      serverRegion: region
+    };
+    saveProgress(nextUser);
+    addQuestToast(`Connected to ${engine === 'unreal' ? 'Unreal Engine 5 NetDriver' : 'Unity 6 Netcode Relay'}!`, 10);
+  };
+
   const toggleFavorite = (gameId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     if (!user) return;
@@ -456,17 +510,44 @@ export default function App() {
     { id: 'play_game', title: 'Explore Any Game', desc: 'Launch a game or teaser from the console', reward: 20, done: false },
     { id: 'high_score', title: 'Earn High Score', desc: 'Reach 100+ score in 2048 Sliders', reward: 50, done: false },
     { id: 'win_ttt', title: 'Victory Standard', desc: 'Outsmart the AI in Tic-Tac-Toe', reward: 35, done: false },
+    { id: 'daily_streak', title: 'Daily Flame', desc: 'Claim your consecutive daily login reward', reward: 30, done: false },
+    { id: 'leaderboard_check', title: 'Global Contender', desc: 'Inspect top players on the leaderboard', reward: 20, done: false },
     { id: 'air_combat', title: 'Sky Guardian', desc: 'Launch the new Air Strike 1945 fighter jet', reward: 40, done: false },
     { id: 'spin_wheel', title: 'Gamer Fortune', desc: 'Spin the release wheel in any preview', reward: 15, done: false },
   ]);
 
-  // Load user data on startup
+  // Load user data on startup with daily login streak consecutive validation & reset
   useEffect(() => {
     const saved = localStorage.getItem('ocean_games_user');
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
+        const parsed: UserProgress = JSON.parse(saved);
+        const today = new Date().toISOString().slice(0, 10);
+
+        // Ensure dailyStreak and dedicated server settings
+        parsed.dailyStreak = parsed.dailyStreak || parsed.streak || 1;
+        parsed.serverEngine = parsed.serverEngine || 'unreal';
+        parsed.serverRegion = parsed.serverRegion || 'US-East (AWS Virginia - Dedicated)';
+
+        if (!parsed.lastLoginDate) {
+          parsed.lastLoginDate = today;
+        } else if (parsed.lastLoginDate !== today) {
+          const d1 = new Date(parsed.lastLoginDate + 'T00:00:00');
+          const d2 = new Date(today + 'T00:00:00');
+          const diffDays = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+
+          if (diffDays === 1) {
+            // Consecutive day! Daily streak continues uninterrupted
+          } else if (diffDays > 1) {
+            // Missed 1 or more days! Daily streak resets to Day 1
+            parsed.dailyStreak = 1;
+            setStreakResetNotice(true);
+          }
+          parsed.lastLoginDate = today;
+        }
+
         setUser(parsed);
+        localStorage.setItem('ocean_games_user', JSON.stringify(parsed));
       } catch {
         // Fallback
       }
@@ -766,6 +847,88 @@ export default function App() {
                             <span className="text-ink font-sans font-black">{user.coins}</span>
                           </motion.div>
                         </div>
+                      </div>
+
+                      {/* Daily Streak Reset Alert (if user missed a day) */}
+                      {streakResetNotice && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-coral/15 border border-coral/30 rounded-2xl p-2.5 mb-2.5 flex items-center justify-between gap-2 text-coral"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">⚠️</span>
+                            <p className="text-[10.5px] font-bold leading-tight">
+                              Day missed! Your streak reset to Day 1. Log in daily to rebuild your multiplier!
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setStreakResetNotice(false)}
+                            className="w-5 h-5 rounded-full bg-coral/20 flex items-center justify-center text-xs font-black cursor-pointer hover:bg-coral/30"
+                          >
+                            ×
+                          </button>
+                        </motion.div>
+                      )}
+
+                      {/* Operations & Telemetry Ribbon (Daily Streak, Leaderboard, Game Server Engine) */}
+                      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-2 scrollbar-none" id="hub_operations_ribbon">
+                        {/* Daily Streak Indicator */}
+                        <motion.button
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => {
+                            playSound('tap', user.soundEnabled);
+                            setShowDailyStreak(true);
+                          }}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-xs font-black transition-all cursor-pointer shrink-0 shadow-xs ${
+                            canClaimDailyReward
+                              ? 'bg-amber/15 border-amber/40 text-amber-700 dark:text-amber-400 ring-1 ring-amber/50 animate-pulse'
+                              : 'bg-surface border-line text-ink hover:bg-line/20'
+                          }`}
+                          title="View Daily Login Streak Rewards"
+                        >
+                          <Flame className={`w-3.5 h-3.5 ${canClaimDailyReward ? 'text-amber fill-amber animate-bounce' : 'text-coral'}`} />
+                          <span>{user.dailyStreak || 1} Day Streak</span>
+                          {canClaimDailyReward && (
+                            <span className="bg-amber text-slate-950 text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase ml-0.5">
+                              Claim
+                            </span>
+                          )}
+                        </motion.button>
+
+                        {/* Visual Top Players Leaderboard Button (Recharts) */}
+                        <motion.button
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => {
+                            playSound('tap', user.soundEnabled);
+                            setShowLeaderboard(true);
+                            completeQuest('leaderboard_check');
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-line bg-surface hover:bg-line/20 text-ink text-xs font-black transition-all cursor-pointer shrink-0 shadow-xs"
+                          title="Open Top Players Global Leaderboard"
+                        >
+                          <Trophy className="w-3.5 h-3.5 text-amber" />
+                          <span>Top Players</span>
+                          <span className="text-[9px] font-mono text-ink-soft/70 ml-0.5">📊</span>
+                        </motion.button>
+
+                        {/* Dedicated Server Engine Status (Unreal Engine / Unity) */}
+                        <motion.button
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => {
+                            playSound('tap', user.soundEnabled);
+                            setShowEngineServer(true);
+                          }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-line bg-surface hover:bg-line/20 text-ink text-xs font-black transition-all cursor-pointer shrink-0 shadow-xs"
+                          title="Inspect Game Engine Dedicated Server"
+                        >
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                          <Server className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-[11px]">
+                            {user.serverEngine === 'unity' ? 'Unity Netcode' : 'UE5 Dedicated'}
+                          </span>
+                          <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400">22ms</span>
+                        </motion.button>
                       </div>
 
                       {/* Dynamic Tab Selector (Arcade, Quests, Profile/Settings) */}
@@ -1143,6 +1306,42 @@ export default function App() {
                                 </div>
                               </div>
 
+                              {/* Dedicated Game Server Architecture Card (Unreal / Unity) */}
+                              <div className="bg-surface border border-line rounded-2xl p-4 space-y-3 shadow-xs" id="engine_server_panel">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider flex items-center gap-1.5">
+                                      <Server className="w-3.5 h-3.5 text-emerald-500" />
+                                      Game Engine Dedicated Server
+                                    </h4>
+                                    <p className="text-[10px] text-ink-soft font-semibold leading-tight mt-0.5">
+                                      High-tickrate server backend simulating Unreal Engine 5 & Unity Netcode
+                                    </p>
+                                  </div>
+                                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                                </div>
+
+                                <div className="flex items-center justify-between p-2.5 bg-bg rounded-xl border border-line/50">
+                                  <div>
+                                    <p className="text-xs font-black text-ink">
+                                      {user.serverEngine === 'unity' ? 'Unity 6 Netcode Relay' : 'Unreal Engine 5 NetDriver'}
+                                    </p>
+                                    <p className="text-[9px] font-mono text-ink-soft">
+                                      {user.serverRegion || 'US-East (AWS Virginia)'} • 60Hz tick
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      playSound('tap', user.soundEnabled);
+                                      setShowEngineServer(true);
+                                    }}
+                                    className="px-3 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[10px] font-black rounded-lg cursor-pointer hover:opacity-90 transition-all shadow-xs"
+                                  >
+                                    Configure
+                                  </button>
+                                </div>
+                              </div>
+
                               {/* Profile customizer card */}
                               <div className="bg-surface border border-line rounded-2xl p-4 space-y-3 shadow-xs">
                                 <h4 className="text-xs font-black text-ink-soft uppercase tracking-wider">Mascot Settings</h4>
@@ -1507,6 +1706,41 @@ export default function App() {
                               </button>
                             </motion.div>
                           </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Daily Streak Modal */}
+                      <AnimatePresence>
+                        {showDailyStreak && (
+                          <DailyStreakModal
+                            user={user}
+                            onClose={() => setShowDailyStreak(false)}
+                            onClaimDailyReward={handleClaimDailyReward}
+                            canClaimToday={canClaimDailyReward}
+                            streakResetNotice={streakResetNotice}
+                          />
+                        )}
+                      </AnimatePresence>
+
+                      {/* Top Players Global Leaderboard Modal (Powered by Recharts) */}
+                      <AnimatePresence>
+                        {showLeaderboard && (
+                          <LeaderboardModal
+                            user={user}
+                            onClose={() => setShowLeaderboard(false)}
+                            serverEngine={user.serverEngine}
+                          />
+                        )}
+                      </AnimatePresence>
+
+                      {/* Dedicated Game Server Modal (Unreal Engine / Unity) */}
+                      <AnimatePresence>
+                        {showEngineServer && (
+                          <EngineServerModal
+                            user={user}
+                            onClose={() => setShowEngineServer(false)}
+                            onSelectEngine={handleSelectEngine}
+                          />
                         )}
                       </AnimatePresence>
 
