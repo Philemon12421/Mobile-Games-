@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { History, Play, Sparkles, Clock, Zap, RotateCcw, Flame } from 'lucide-react';
+import { History, Play, Clock, Sparkles, RotateCcw } from 'lucide-react';
 import { Game, RecentlyPlayedItem } from '../types';
 import { playSound, triggerHaptic } from '../utils/audio';
 
@@ -23,7 +23,6 @@ export const RecentlyPlayed: React.FC<RecentlyPlayedProps> = ({
   soundEnabled = true,
   hapticEnabled = true,
 }) => {
-  // Live relative timestamp ticker (updates every second for real-time accuracy)
   const [now, setNow] = useState<number>(Date.now());
 
   useEffect(() => {
@@ -33,7 +32,6 @@ export const RecentlyPlayed: React.FC<RecentlyPlayedProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  // Normalize recently played items into uniform objects with game and timestamp
   const normalizedItems = recentlyPlayed
     .map((item, index) => {
       if (typeof item === 'string') {
@@ -46,7 +44,6 @@ export const RecentlyPlayed: React.FC<RecentlyPlayedProps> = ({
     .filter((entry): entry is { game: Game; timestamp: number } => entry !== null)
     .slice(0, 3);
 
-  // Helper for real-time relative time
   const getRelativeTime = (timestamp: number) => {
     const diffMs = Math.max(0, now - timestamp);
     const diffSec = Math.floor(diffMs / 1000);
@@ -60,9 +57,8 @@ export const RecentlyPlayed: React.FC<RecentlyPlayedProps> = ({
     return `${diffDays}d ago`;
   };
 
-  // If user has zero recently played games, offer quick starter games (top 3)
-  const displayItems = normalizedItems.length > 0 
-    ? normalizedItems 
+  const displayItems = normalizedItems.length > 0
+    ? normalizedItems
     : [
         { game: allGames.find((g) => g.id === 'g2048') || allGames[0], timestamp: 0, isSuggested: true },
         { game: allGames.find((g) => g.id === 'air') || allGames[1], timestamp: 0, isSuggested: true },
@@ -72,43 +68,18 @@ export const RecentlyPlayed: React.FC<RecentlyPlayedProps> = ({
   const hasHistory = normalizedItems.length > 0;
 
   return (
-    <section 
-      aria-label="Recently Played Games"
-      id="recently_played_section" 
-      className="mb-4 bg-surface/80 dark:bg-surface/60 border border-line/80 rounded-2xl p-3 shadow-xs backdrop-blur-xs transition-all"
-    >
-      {/* Header bar with Real-time indicator */}
-      <div className="flex items-center justify-between mb-2.5 px-0.5">
+    <section aria-label="Recently Played" className="mb-4" id="recently_played_section">
+      <div className="flex items-center justify-between mb-2 px-1">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-coral/15 flex items-center justify-center text-coral">
-            <History className="w-3.5 h-3.5" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-xs font-black tracking-tight text-ink flex items-center gap-1.5">
-                Recently Played
-                {hasHistory && (
-                  <span className="text-[10px] text-ink-soft/70 font-mono font-normal">
-                    ({normalizedItems.length}/3)
-                  </span>
-                )}
-              </h3>
-              {/* Real-time pulse pill */}
-              <span 
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[8.5px] font-extrabold uppercase tracking-wider"
-                title="Real-time session updates active"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                Live
-              </span>
-            </div>
-            <p className="text-[9.5px] font-semibold text-ink-soft">
-              {hasHistory ? 'Instant 1-tap jump to your active games' : 'Quick recommendations to jump into the action'}
-            </p>
-          </div>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-ink-soft">
+            Recently Played
+          </span>
+          <span className="inline-flex items-center gap-1 text-[9px] font-mono text-emerald-600 dark:text-emerald-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Live
+          </span>
         </div>
 
-        {/* Clear History Button (if history exists) */}
         {hasHistory && onClearHistory && (
           <button
             onClick={() => {
@@ -116,8 +87,8 @@ export const RecentlyPlayed: React.FC<RecentlyPlayedProps> = ({
               triggerHaptic(15, hapticEnabled);
               onClearHistory();
             }}
-            className="text-[10px] font-bold text-ink-soft/70 hover:text-coral flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-coral/10 transition-colors cursor-pointer"
-            title="Clear recently played history"
+            className="text-[10px] text-ink-soft/60 hover:text-coral transition-colors flex items-center gap-1 cursor-pointer"
+            title="Clear history"
           >
             <RotateCcw className="w-2.5 h-2.5" />
             <span>Clear</span>
@@ -125,79 +96,41 @@ export const RecentlyPlayed: React.FC<RecentlyPlayedProps> = ({
         )}
       </div>
 
-      {/* 3 Quick-access game cards */}
-      <div className="grid grid-cols-3 gap-2" id="recently_played_cards_grid">
+      <div className="grid grid-cols-3 gap-2" id="recently_played_grid">
         <AnimatePresence mode="popLayout">
-          {displayItems.map((item, idx) => {
+          {displayItems.map((item) => {
             if (!item.game) return null;
             const isSuggested = 'isSuggested' in item && item.isSuggested;
-            const isPlayable = item.game.playable;
 
             return (
               <motion.button
-                layout
                 key={item.game.id}
-                id={`recent_game_${item.game.id}`}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.85 }}
-                transition={{ duration: 0.2 }}
-                whileHover={{ y: -2, scale: 1.02 }}
-                whileTap={{ scale: 0.95 }}
+                layout
+                whileHover={{ y: -1.5 }}
+                whileTap={{ scale: 0.96 }}
                 onClick={() => {
                   playSound('tap', soundEnabled);
                   triggerHaptic(15, hapticEnabled);
                   onLaunchGame(item.game);
                 }}
-                className="group relative flex flex-col items-start p-2.5 rounded-xl border border-line bg-bg/90 hover:bg-line/20 hover:border-coral/50 transition-all text-left cursor-pointer overflow-hidden shadow-xs"
+                className="group flex flex-col items-start p-2.5 rounded-2xl bg-surface border border-line/60 hover:border-coral/50 transition-all text-left cursor-pointer shadow-xs"
               >
-                {/* Subtle top-right quick launch glyph */}
-                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-surface border border-line flex items-center justify-center text-ink-soft group-hover:bg-coral group-hover:text-white group-hover:border-coral transition-colors shadow-2xs">
-                  <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
-                </div>
-
-                {/* Game Icon & rank pill */}
-                <div className="flex items-center gap-1.5 mb-2">
-                  <div className="w-8 h-8 rounded-lg bg-surface border border-line flex items-center justify-center text-coral shadow-2xs group-hover:scale-105 transition-transform">
+                <div className="w-full flex items-center justify-between mb-2">
+                  <div className="w-7 h-7 rounded-xl bg-line/30 flex items-center justify-center text-coral group-hover:scale-105 transition-transform">
                     {getGameIcon(item.game.id, 'w-4 h-4')}
                   </div>
-                  <span className="text-[9px] font-mono font-black text-ink-soft/60 px-1 py-0.5 rounded bg-line/30">
-                    #{idx + 1}
-                  </span>
+                  <div className="w-5 h-5 rounded-full bg-line/20 flex items-center justify-center text-ink-soft opacity-0 group-hover:opacity-100 group-hover:bg-coral group-hover:text-white transition-all">
+                    <Play className="w-2.5 h-2.5 fill-current ml-0.5" />
+                  </div>
                 </div>
 
-                {/* Game Name */}
-                <span className="text-[11px] font-extrabold text-ink line-clamp-1 group-hover:text-coral transition-colors leading-tight">
+                <span className="text-[11px] font-bold text-ink truncate w-full group-hover:text-coral transition-colors">
                   {item.game.name}
                 </span>
 
-                {/* Real-time status / relative timestamp */}
-                <div className="mt-1 flex items-center gap-1 text-[9px] font-bold text-ink-soft">
-                  {isSuggested ? (
-                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                      <Sparkles className="w-2.5 h-2.5" />
-                      Suggested
-                    </span>
-                  ) : (
-                    <span 
-                      className="flex items-center gap-1 font-mono text-emerald-600 dark:text-emerald-400"
-                      title={`Last launched at ${new Date(item.timestamp).toLocaleTimeString()}`}
-                    >
-                      <Clock className="w-2.5 h-2.5" />
-                      {getRelativeTime(item.timestamp)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Status tag */}
-                <div className="mt-1.5 w-full flex items-center justify-between border-t border-line/40 pt-1.5">
-                  <span className="text-[8.5px] font-black uppercase tracking-wider text-ink-soft/70">
-                    {isPlayable ? 'Ready' : 'Preview'}
-                  </span>
-                  <span className="text-[8.5px] font-black text-coral group-hover:translate-x-0.5 transition-transform">
-                    Launch →
-                  </span>
-                </div>
+                <span className="text-[9.5px] font-mono text-ink-soft/70 mt-0.5">
+                  {isSuggested ? 'Suggested' : getRelativeTime(item.timestamp)}
+                </span>
               </motion.button>
             );
           })}

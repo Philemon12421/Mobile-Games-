@@ -861,41 +861,69 @@ export default function App() {
                   {activeScreen === 'hub' && (
                     <div className="h-full flex flex-col p-5 pb-0" id="hub_view">
                       
-                      {/* Brand Header */}
-                      <div className="flex justify-between items-center mb-3" id="hub_header">
+                      {/* Clean, Minimalist Brand Header */}
+                      <div className="flex justify-between items-center mb-4" id="hub_header">
                         <div>
-                          <h1 className="font-display font-extrabold text-2xl tracking-tight text-ink flex items-center gap-1.5 leading-none">
+                          <h1 className="font-display font-extrabold text-2xl tracking-tight text-ink flex items-center gap-1 leading-none">
                             Ocean<span style={{ color: accentColor }}>Games</span>
                           </h1>
-                          <p className="text-[10px] font-bold text-ink-soft/70 uppercase tracking-widest mt-0.5">
-                            Play instantly • Zero blue
-                          </p>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          {/* Daily Wheel Spin Gift button */}
+                        <div className="flex items-center gap-1.5">
+                          {/* Daily Streak Quick Action */}
                           <motion.button
-                            whileTap={{ scale: 0.9 }}
+                            whileTap={{ scale: 0.94 }}
+                            onClick={() => {
+                              playSound('tap', user.soundEnabled);
+                              setShowDailyStreak(true);
+                            }}
+                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-full border text-xs font-bold transition-all cursor-pointer shadow-2xs ${
+                              canClaimDailyReward
+                                ? 'bg-amber/15 border-amber/40 text-amber-700 dark:text-amber-400 animate-pulse'
+                                : 'bg-surface border-line/70 text-ink hover:bg-line/20'
+                            }`}
+                            title="Daily Streak"
+                          >
+                            <Flame className={`w-3.5 h-3.5 ${canClaimDailyReward ? 'text-amber fill-amber' : 'text-coral'}`} />
+                            <span>{user.dailyStreak || 1}d</span>
+                          </motion.button>
+
+                          {/* Leaderboard Quick Action */}
+                          <motion.button
+                            whileTap={{ scale: 0.94 }}
+                            onClick={() => {
+                              playSound('tap', user.soundEnabled);
+                              setShowLeaderboard(true);
+                              completeQuest('leaderboard_check');
+                            }}
+                            className="w-8 h-8 rounded-full border border-line/70 bg-surface flex items-center justify-center text-ink hover:bg-line/20 transition-all cursor-pointer shadow-2xs"
+                            title="Global Leaderboard"
+                          >
+                            <Trophy className="w-3.5 h-3.5 text-amber" />
+                          </motion.button>
+
+                          {/* Daily Wheel Spin Button */}
+                          <motion.button
+                            whileTap={{ scale: 0.94 }}
                             onClick={() => {
                               playSound('tap', user.soundEnabled);
                               setShowDailySpin(true);
                               setSpunPrize(null);
                             }}
-                            className="flex items-center gap-1 bg-amber/15 border border-amber/30 text-amber-700 dark:text-amber-400 rounded-full py-1.5 px-2.5 text-[10px] font-black uppercase tracking-wider cursor-pointer shadow-xs hover:bg-amber/25 transition-all"
+                            className="w-8 h-8 rounded-full border border-line/70 bg-surface flex items-center justify-center text-ink hover:bg-line/20 transition-all cursor-pointer shadow-2xs"
+                            title="Daily Wheel"
                           >
-                            <Gift className="w-3.5 h-3.5 text-amber animate-bounce" />
-                            <span>Wheel</span>
+                            <Gift className="w-3.5 h-3.5 text-coral" />
                           </motion.button>
 
-                          {/* Gold coin balance readout */}
-                          <motion.div 
-                            whileTap={{ scale: 0.95 }}
-                            className="flex items-center gap-1.5 bg-surface border border-line rounded-full py-1.5 px-3.5 shadow-sm font-display font-extrabold text-sm text-ink-soft"
+                          {/* Gold Coin Readout */}
+                          <div
+                            className="flex items-center gap-1.5 bg-surface border border-line/70 rounded-full py-1.5 px-3 font-sans font-extrabold text-xs text-ink shadow-2xs"
                             id="coin_pouch"
                           >
-                            <span className="text-amber animate-pulse">🪙</span>
-                            <span className="text-ink font-sans font-black">{user.coins}</span>
-                          </motion.div>
+                            <span className="text-amber">🪙</span>
+                            <span>{user.coins}</span>
+                          </div>
                         </div>
                       </div>
 
@@ -904,7 +932,7 @@ export default function App() {
                         <motion.div
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
-                          className="bg-coral/15 border border-coral/30 rounded-2xl p-2.5 mb-2.5 flex items-center justify-between gap-2 text-coral"
+                          className="bg-coral/15 border border-coral/30 rounded-2xl p-2.5 mb-3 flex items-center justify-between gap-2 text-coral"
                         >
                           <div className="flex items-center gap-2">
                             <span className="text-base">⚠️</span>
@@ -921,66 +949,6 @@ export default function App() {
                         </motion.div>
                       )}
 
-                      {/* Operations & Telemetry Ribbon (Daily Streak, Leaderboard, Game Server Engine) */}
-                      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-2 scrollbar-none" id="hub_operations_ribbon">
-                        {/* Daily Streak Indicator */}
-                        <motion.button
-                          whileTap={{ scale: 0.94 }}
-                          onClick={() => {
-                            playSound('tap', user.soundEnabled);
-                            setShowDailyStreak(true);
-                          }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border text-xs font-black transition-all cursor-pointer shrink-0 shadow-xs ${
-                            canClaimDailyReward
-                              ? 'bg-amber/15 border-amber/40 text-amber-700 dark:text-amber-400 ring-1 ring-amber/50 animate-pulse'
-                              : 'bg-surface border-line text-ink hover:bg-line/20'
-                          }`}
-                          title="View Daily Login Streak Rewards"
-                        >
-                          <Flame className={`w-3.5 h-3.5 ${canClaimDailyReward ? 'text-amber fill-amber animate-bounce' : 'text-coral'}`} />
-                          <span>{user.dailyStreak || 1} Day Streak</span>
-                          {canClaimDailyReward && (
-                            <span className="bg-amber text-slate-950 text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase ml-0.5">
-                              Claim
-                            </span>
-                          )}
-                        </motion.button>
-
-                        {/* Visual Top Players Leaderboard Button (Recharts) */}
-                        <motion.button
-                          whileTap={{ scale: 0.94 }}
-                          onClick={() => {
-                            playSound('tap', user.soundEnabled);
-                            setShowLeaderboard(true);
-                            completeQuest('leaderboard_check');
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-line bg-surface hover:bg-line/20 text-ink text-xs font-black transition-all cursor-pointer shrink-0 shadow-xs"
-                          title="Open Top Players Global Leaderboard"
-                        >
-                          <Trophy className="w-3.5 h-3.5 text-amber" />
-                          <span>Top Players</span>
-                          <span className="text-[9px] font-mono text-ink-soft/70 ml-0.5">📊</span>
-                        </motion.button>
-
-                        {/* Dedicated Server Engine Status (Unreal Engine / Unity) */}
-                        <motion.button
-                          whileTap={{ scale: 0.94 }}
-                          onClick={() => {
-                            playSound('tap', user.soundEnabled);
-                            setShowEngineServer(true);
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-line bg-surface hover:bg-line/20 text-ink text-xs font-black transition-all cursor-pointer shrink-0 shadow-xs"
-                          title="Inspect Game Engine Dedicated Server"
-                        >
-                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                          <Server className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                          <span className="text-[11px]">
-                            {user.serverEngine === 'unity' ? 'Unity Netcode' : 'UE5 Dedicated'}
-                          </span>
-                          <span className="text-[9px] font-mono text-emerald-600 dark:text-emerald-400">22ms</span>
-                        </motion.button>
-                      </div>
-
                       {/* Dynamic Tab Selector (Arcade, Quests, Profile/Settings) */}
                       {activeTab === 'arcade' && (
                         <div className="flex-1 flex flex-col overflow-hidden" id="tab_arcade_view">
@@ -996,21 +964,21 @@ export default function App() {
                             hapticEnabled={user?.hapticEnabled}
                           />
 
-                          {/* Search bar & filters panel */}
-                          <div className="space-y-2.5 mb-4" id="search_and_filters">
+                          {/* Clean Search bar & single-row filters */}
+                          <div className="space-y-2 mb-3.5" id="search_and_filters">
                             <div className="flex gap-2 items-center" id="search_sort_container">
                               <div className="relative flex-1">
-                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft/50" />
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-soft/40" />
                                 <input
                                   type="text"
                                   placeholder="Search games..."
                                   value={searchQuery}
                                   onChange={(e) => setSearchQuery(e.target.value)}
-                                  className="w-full bg-surface border border-line focus:border-coral rounded-2xl pl-10 pr-4 py-2.5 text-xs font-bold outline-none placeholder:text-ink-soft/40 transition-colors text-ink"
+                                  className="w-full bg-surface border border-line/70 focus:border-coral/60 rounded-xl pl-9 pr-3.5 py-2 text-xs font-medium outline-none placeholder:text-ink-soft/40 transition-colors text-ink"
                                 />
                               </div>
                               
-                              {/* Elegant Sort Dropdown */}
+                              {/* Sort Dropdown */}
                               <div className="relative shrink-0">
                                 <select
                                   value={sortBy}
@@ -1018,226 +986,131 @@ export default function App() {
                                     playSound('tap', user?.soundEnabled);
                                     setSortBy(e.target.value as any);
                                   }}
-                                  className="bg-surface border border-line focus:border-coral text-[11px] font-extrabold rounded-2xl px-3.5 py-2.5 outline-none cursor-pointer text-ink appearance-none pr-7 shadow-xs relative"
+                                  className="bg-surface border border-line/70 focus:border-coral/60 text-[11px] font-bold rounded-xl px-3 py-2 outline-none cursor-pointer text-ink appearance-none pr-6 shadow-2xs relative"
                                   id="sort_by_dropdown"
                                 >
                                   <option value="name">A-Z</option>
-                                  <option value="played">Most Played</option>
+                                  <option value="played">Popular</option>
                                   <option value="newest">Newest</option>
                                 </select>
-                                <span className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-ink-soft/60 font-sans text-[9px]">▼</span>
+                                <span className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-ink-soft/60 font-sans text-[8px]">▼</span>
                               </div>
                             </div>
 
-                            {/* Dual Filter Panel: Genres & Release Phases */}
-                            <div className="space-y-2 pb-0.5" id="dual_filter_panel">
-                              {/* Category/Genre Tabs */}
-                              <div className="flex gap-1.5 overflow-x-auto" id="category_genre_filters">
-                                {([
-                                  { id: 'all', label: 'All 🎮' },
-                                  { id: 'Favorites', label: `Starred ⭐ (${(user?.favorites || []).length})` },
-                                  { id: 'Action', label: 'Action ⚔️' },
-                                  { id: 'Puzzle', label: 'Puzzle 🧩' },
-                                  { id: 'Classic', label: 'Classics 🎲' },
-                                ] as const).map((cat) => (
-                                  <button
-                                    key={cat.id}
-                                    onClick={() => {
-                                      playSound('tap', user?.soundEnabled);
-                                      setSelectedCategory(cat.id as any);
-                                    }}
-                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
-                                      selectedCategory === cat.id
-                                        ? 'bg-ink text-white shadow-xs'
-                                        : 'bg-surface border border-line text-ink-soft hover:bg-line/20'
-                                    }`}
-                                  >
-                                    {cat.label}
-                                  </button>
-                                ))}
-                              </div>
-
-                              {/* Phase release pills */}
-                              <div className="flex gap-1.5 overflow-x-auto pb-1" id="phase_filters">
+                            {/* Clean Category/Genre Tabs (Single Row) */}
+                            <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none" id="category_genre_filters">
+                              {([
+                                { id: 'all', label: 'All' },
+                                { id: 'Favorites', label: `Starred ⭐` },
+                                { id: 'Action', label: 'Action' },
+                                { id: 'Puzzle', label: 'Puzzle' },
+                                { id: 'Classic', label: 'Classic' },
+                              ] as const).map((cat) => (
                                 <button
+                                  key={cat.id}
                                   onClick={() => {
                                     playSound('tap', user?.soundEnabled);
-                                    setSelectedPhase('all');
+                                    setSelectedCategory(cat.id as any);
                                   }}
-                                  className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${
-                                    selectedPhase === 'all'
-                                      ? 'bg-ink/5 border border-ink text-ink shadow-xs'
-                                      : 'bg-surface border border-line text-ink-soft hover:bg-line/20'
+                                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                                    selectedCategory === cat.id
+                                      ? 'bg-ink text-white shadow-2xs'
+                                      : 'bg-surface border border-line/70 text-ink-soft hover:bg-line/20'
                                   }`}
                                 >
-                                  All Releases
+                                  {cat.label}
                                 </button>
-                                {[1, 2, 3].map((ph) => (
-                                  <button
-                                    key={ph}
-                                    onClick={() => {
-                                      playSound('tap', user?.soundEnabled);
-                                      setSelectedPhase(ph);
-                                    }}
-                                    className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 ${
-                                      selectedPhase === ph
-                                        ? 'bg-ink/5 border border-ink text-ink shadow-xs'
-                                        : 'bg-surface border border-line text-ink-soft hover:bg-line/20'
-                                    }`}
-                                  >
-                                    <span className={`w-1.5 h-1.5 rounded-full ${ph === 1 ? 'bg-coral' : ph === 2 ? 'bg-amber' : 'bg-purple'}`} />
-                                    Phase {ph}
-                                  </button>
-                                ))}
-                              </div>
+                              ))}
                             </div>
                           </div>
 
-                          {/* Legend & release grid */}
+                          {/* Games Grid Container */}
                           <div className="flex-1 overflow-y-auto pb-24" id="games_grid_container">
                             
-                            {/* Vibrant Palette Welcome Banner */}
-                            <div className="p-4 rounded-3xl border-2 mb-3.5 transition-transform shadow-xs" style={{ backgroundColor: '#FFEFEC', borderColor: '#FF6B5D' }} id="welcome_banner">
-                              <h2 className="text-lg font-extrabold mb-1" style={{ color: '#C94A3D' }}>Welcome Back!</h2>
-                              <p className="text-[11px] leading-relaxed font-bold" style={{ color: '#6E6270' }}>
-                                You've unlocked playable phase games. Ready to climb the leaderboard?
-                              </p>
-                            </div>
-
-                            {/* Vibrant Palette Level Tracker */}
-                            <div className="p-4 rounded-3xl bg-surface border border-line mb-4.5 shadow-xs" id="level_tracker_card">
-                              <div className="flex items-center gap-3 mb-2.5">
-                                <div className="w-10 h-10 rounded-full overflow-hidden border-2 flex items-center justify-center bg-line text-lg" style={{ borderColor: '#F5A623' }}>
-                                  {user?.avatar || '🐙'}
-                                </div>
-                                <div>
-                                  <p className="font-extrabold text-xs text-ink">{user?.nickname || 'Guest Gamer'}</p>
-                                  <p className="text-[10px] font-bold" style={{ color: '#6E6270' }}>Level 24 Pro Player</p>
-                                </div>
-                              </div>
-                              <div className="w-full h-2 rounded-full" style={{ backgroundColor: '#EDE4DC' }}>
-                                <div className="h-full rounded-full" style={{ width: '75%', backgroundColor: '#F5A623' }} />
-                              </div>
-                              <div className="flex justify-between items-center mt-2">
-                                <p className="text-[9px] font-black uppercase tracking-wider" style={{ color: '#6E6270' }}>750 / 1000 XP to Level 25</p>
-                                <span className="text-[8px] font-black uppercase py-0.5 px-2 rounded-lg text-white" style={{ backgroundColor: '#F5A623' }}>LEVEL UP</span>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3.5" id="game_cards_grid">
+                            <div className="grid grid-cols-2 gap-3" id="game_cards_grid">
                               {isLoadingLibrary ? (
                                 Array.from({ length: 4 }).map((_, idx) => (
                                   <div
                                     key={`skeleton_${idx}`}
-                                    className="bg-surface border border-line rounded-3xl overflow-hidden shadow-xs relative flex flex-col justify-between animate-pulse h-[132px]"
+                                    className="bg-surface border border-line/70 rounded-2xl overflow-hidden p-3.5 animate-pulse h-[120px] flex flex-col justify-between"
                                   >
-                                    {/* Top Accent Strip Skeleton */}
-                                    <div className="h-1.5 w-full bg-ink-soft/10" />
-
-                                    <div className="p-4 flex-1 flex flex-col justify-between">
-                                      <div className="flex justify-between items-start">
-                                        {/* Icon block skeleton */}
-                                        <div className="w-11 h-11 rounded-2xl bg-ink-soft/10 shadow-inner" />
-                                        {/* Badge skeleton */}
-                                        <div className="w-10 h-4 rounded-full bg-ink-soft/5" />
-                                      </div>
-
-                                      <div className="mt-3.5 space-y-1.5">
-                                        {/* Title skeleton */}
-                                        <div className="h-3.5 w-3/4 rounded-md bg-ink-soft/10" />
-                                        <div className="flex items-center justify-between gap-1.5 mt-1">
-                                          {/* Description skeleton */}
-                                          <div className="h-2.5 w-1/2 rounded bg-ink-soft/5" />
-                                          {/* Playcount skeleton */}
-                                          <div className="h-2.5 w-1/5 rounded bg-ink-soft/5" />
-                                        </div>
-                                      </div>
+                                    <div className="flex justify-between items-start">
+                                      <div className="w-10 h-10 rounded-xl bg-ink-soft/10" />
+                                      <div className="w-6 h-6 rounded-full bg-ink-soft/5" />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <div className="h-3 w-3/4 rounded bg-ink-soft/10" />
+                                      <div className="h-2 w-1/2 rounded bg-ink-soft/5" />
                                     </div>
                                   </div>
                                 ))
                               ) : filteredGames.length > 0 ? (
                                 filteredGames.map((game) => {
-                                  const config = PHASE_COLORS[game.phase] || { bg: 'bg-line/30', text: 'text-ink-soft', border: 'border-line' };
                                   const isFav = (user?.favorites || []).includes(game.id);
                                   return (
                                     <motion.div
                                       key={game.id}
-                                      whileHover={{ y: -2, boxShadow: '0 4px 12px rgba(43,31,46,0.06)' }}
-                                      whileTap={{ scale: 0.96 }}
+                                      whileHover={{ y: -2 }}
+                                      whileTap={{ scale: 0.97 }}
                                       onClick={() => {
                                         playSound('tap', user?.soundEnabled);
                                         triggerHaptic(15, user?.hapticEnabled);
                                         setSelectedDetailGame(game);
                                       }}
-                                      className="bg-surface border border-line hover:border-coral/40 rounded-3xl overflow-hidden cursor-pointer shadow-xs transition-all relative flex flex-col justify-between"
+                                      className="bg-surface border border-line/70 hover:border-coral/40 rounded-2xl p-3.5 cursor-pointer shadow-2xs transition-all relative flex flex-col justify-between min-h-[120px]"
                                     >
-                                      {/* Top Accent Strip with Brand Colors */}
-                                      <div className={`h-1.5 w-full ${game.phase === 1 ? 'bg-coral' : game.phase === 2 ? 'bg-amber' : 'bg-purple'}`} />
-
-                                      <div className="p-3.5 flex-1 flex flex-col justify-between">
-                                        <div className="flex justify-between items-start">
-                                          <div className={`w-11 h-11 rounded-2xl ${config.bg} flex items-center justify-center shadow-inner`}>
-                                            {getGameIcon(game.id, `w-5.5 h-5.5 ${config.text}`)}
-                                          </div>
-                                          
-                                          <div className="flex items-center gap-1">
-                                            <button
-                                              onClick={(e) => toggleFavorite(game.id, e)}
-                                              className="w-6 h-6 rounded-full flex items-center justify-center transition-colors cursor-pointer hover:bg-black/5"
-                                              title={isFav ? "Unstar game" : "Star game"}
-                                            >
-                                              <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber text-amber' : 'text-ink-soft/30 hover:text-amber'}`} />
-                                            </button>
-                                            <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-full border uppercase tracking-wider ${config.bg} ${config.text} ${config.border}`}>
-                                              P{game.phase}
-                                            </span>
-                                          </div>
+                                      <div className="flex justify-between items-start">
+                                        <div className="w-10 h-10 rounded-xl bg-line/25 flex items-center justify-center text-coral shadow-2xs">
+                                          {getGameIcon(game.id, 'w-5 h-5')}
                                         </div>
+                                        
+                                        <button
+                                          onClick={(e) => toggleFavorite(game.id, e)}
+                                          className="w-7 h-7 rounded-full flex items-center justify-center transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/5"
+                                          title={isFav ? "Unstar game" : "Star game"}
+                                        >
+                                          <Star className={`w-4 h-4 ${isFav ? 'fill-amber text-amber' : 'text-ink-soft/30 hover:text-amber'}`} />
+                                        </button>
+                                      </div>
 
-                                        <div className="mt-3">
-                                          <h3 className="font-display font-extrabold text-xs sm:text-sm text-ink line-clamp-1 leading-none mb-1">
-                                            {game.name}
-                                          </h3>
-                                          <div className="flex items-center justify-between gap-1 mt-1">
-                                            <p className="text-[9px] font-bold text-ink-soft/80 leading-tight line-clamp-1">
-                                              {game.playable ? game.meta : 'Phase teaser demo'}
-                                            </p>
-                                            <span className="text-[8px] font-mono font-bold text-ink-soft/50 shrink-0">
-                                              {game.plays ? `${game.plays} plays` : ''}
-                                            </span>
-                                          </div>
-                                        </div>
+                                      <div className="mt-3">
+                                        <h3 className="font-display font-bold text-xs text-ink line-clamp-1 leading-tight mb-0.5">
+                                          {game.name}
+                                        </h3>
+                                        <p className="text-[10px] text-ink-soft line-clamp-1">
+                                          {game.playable ? game.meta : 'Teaser demo'}
+                                        </p>
                                       </div>
                                     </motion.div>
                                   );
                                 })
                               ) : (
                                 <div className="col-span-2 text-center py-10 space-y-2">
-                                  <span className="text-3xl">🏜️</span>
-                                  <p className="text-xs font-bold text-ink-soft">No matching games found.</p>
+                                  <span className="text-2xl">🏜️</span>
+                                  <p className="text-xs font-semibold text-ink-soft">No matching games found.</p>
                                 </div>
                               )}
                             </div>
 
-                            {/* Vibrant Palette Your Stats Section */}
-                            <div className="mt-6 mb-4" id="stats_section">
-                              <h3 className="text-sm font-extrabold mb-3 text-ink">Your Stats</h3>
-                              <div className="grid grid-cols-2 gap-3" id="stats_grid">
-                                <div className="p-4 rounded-3xl bg-surface border border-line flex flex-col justify-between shadow-xs" id="stat_wins">
-                                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: '#6E6270' }}>Total Wins</p>
-                                  <p className="text-xl font-black animate-pulse" style={{ color: '#FF6B5D' }}>{quests.filter((q) => q.done).length * 4 + 12}</p>
+                            {/* Clean Stats Section */}
+                            <div className="mt-5 mb-2" id="stats_section">
+                              <h3 className="text-[11px] font-bold uppercase tracking-wider text-ink-soft mb-2.5">Your Stats</h3>
+                              <div className="grid grid-cols-2 gap-2.5" id="stats_grid">
+                                <div className="p-3 rounded-2xl bg-surface border border-line/60 flex flex-col justify-between shadow-2xs" id="stat_wins">
+                                  <p className="text-[10px] font-semibold text-ink-soft">Total Wins</p>
+                                  <p className="text-lg font-bold text-ink mt-0.5">{quests.filter((q) => q.done).length * 4 + 12}</p>
                                 </div>
-                                <div className="p-4 rounded-3xl bg-surface border border-line flex flex-col justify-between shadow-xs" id="stat_hours">
-                                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: '#6E6270' }}>Game Hours</p>
-                                  <p className="text-xl font-black" style={{ color: '#F5A623' }}>{(user?.coins ? (user.coins / 35).toFixed(1) : '1.5')}</p>
+                                <div className="p-3 rounded-2xl bg-surface border border-line/60 flex flex-col justify-between shadow-2xs" id="stat_hours">
+                                  <p className="text-[10px] font-semibold text-ink-soft">Game Hours</p>
+                                  <p className="text-lg font-bold text-ink mt-0.5">{(user?.coins ? (user.coins / 35).toFixed(1) : '1.5')}h</p>
                                 </div>
-                                <div className="p-4 rounded-3xl bg-surface border border-line flex flex-col justify-between shadow-xs" id="stat_rank">
-                                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: '#6E6270' }}>World Rank</p>
-                                  <p className="text-xl font-black" style={{ color: '#6B4E9E' }}>#1,402</p>
+                                <div className="p-3 rounded-2xl bg-surface border border-line/60 flex flex-col justify-between shadow-2xs" id="stat_rank">
+                                  <p className="text-[10px] font-semibold text-ink-soft">World Rank</p>
+                                  <p className="text-lg font-bold text-ink mt-0.5">#1,402</p>
                                 </div>
-                                <div className="p-4 rounded-3xl bg-surface border border-line flex flex-col justify-between shadow-xs" id="stat_collectibles">
-                                  <p className="text-[9px] font-bold uppercase tracking-widest mb-1" style={{ color: '#6E6270' }}>Gold Coins</p>
-                                  <p className="text-xl font-black" style={{ color: '#2B1F2E' }}>{user?.coins || 0}</p>
+                                <div className="p-3 rounded-2xl bg-surface border border-line/60 flex flex-col justify-between shadow-2xs" id="stat_collectibles">
+                                  <p className="text-[10px] font-semibold text-ink-soft">Gold Coins</p>
+                                  <p className="text-lg font-bold text-amber mt-0.5">🪙 {user?.coins || 0}</p>
                                 </div>
                               </div>
                             </div>
@@ -1545,19 +1418,19 @@ export default function App() {
                         );
                       })()}
 
-                      {/* Floating Bottom Nav Rail bar */}
-                      <div className="absolute bottom-5 left-5 right-5 h-16 bg-[#2B1F2E] border border-line/10 rounded-3xl p-2.5 flex justify-between items-center shadow-lg z-30" id="bottom_navbar">
+                      {/* Floating Clean Bottom Navigation Bar */}
+                      <div className="absolute bottom-4 left-5 right-5 h-14 bg-surface/95 backdrop-blur-md border border-line/80 rounded-2xl p-1.5 flex justify-between items-center shadow-md z-30" id="bottom_navbar">
                         <button
                           onClick={() => {
                             playSound('tap', user.soundEnabled);
                             setActiveTab('arcade');
                           }}
-                          className={`flex-1 flex flex-col items-center justify-center gap-1.5 cursor-pointer rounded-2xl transition-colors py-1 ${
-                            activeTab === 'arcade' ? 'text-white font-extrabold bg-coral/10' : 'text-white/50 hover:text-white/70'
+                          className={`flex-1 flex flex-col items-center justify-center gap-1 cursor-pointer rounded-xl transition-all py-1 ${
+                            activeTab === 'arcade' ? 'text-coral font-bold bg-coral/10' : 'text-ink-soft hover:text-ink'
                           }`}
                         >
-                          <Gamepad2 className="w-5 h-5" />
-                          <span className="text-[8px] uppercase tracking-wider leading-none">Arcade</span>
+                          <Gamepad2 className="w-4 h-4" />
+                          <span className="text-[9px] font-medium tracking-normal leading-none">Arcade</span>
                         </button>
 
                         <button
@@ -1565,12 +1438,12 @@ export default function App() {
                             playSound('tap', user.soundEnabled);
                             setActiveTab('quests');
                           }}
-                          className={`flex-1 flex flex-col items-center justify-center gap-1.5 cursor-pointer rounded-2xl transition-colors py-1 ${
-                            activeTab === 'quests' ? 'text-white font-extrabold bg-coral/10' : 'text-white/50 hover:text-white/70'
+                          className={`flex-1 flex flex-col items-center justify-center gap-1 cursor-pointer rounded-xl transition-all py-1 ${
+                            activeTab === 'quests' ? 'text-coral font-bold bg-coral/10' : 'text-ink-soft hover:text-ink'
                           }`}
                         >
-                          <Trophy className="w-5 h-5" />
-                          <span className="text-[8px] uppercase tracking-wider leading-none">Quests</span>
+                          <Trophy className="w-4 h-4" />
+                          <span className="text-[9px] font-medium tracking-normal leading-none">Quests</span>
                         </button>
 
                         <button
@@ -1578,12 +1451,12 @@ export default function App() {
                             playSound('tap', user.soundEnabled);
                             setActiveTab('settings');
                           }}
-                          className={`flex-1 flex flex-col items-center justify-center gap-1.5 cursor-pointer rounded-2xl transition-colors py-1 ${
-                            activeTab === 'settings' ? 'text-white font-extrabold bg-coral/10' : 'text-white/50 hover:text-white/70'
+                          className={`flex-1 flex flex-col items-center justify-center gap-1 cursor-pointer rounded-xl transition-all py-1 ${
+                            activeTab === 'settings' ? 'text-coral font-bold bg-coral/10' : 'text-ink-soft hover:text-ink'
                           }`}
                         >
-                          <Settings className="w-5 h-5" />
-                          <span className="text-[8px] uppercase tracking-wider leading-none">Shop</span>
+                          <Settings className="w-4 h-4" />
+                          <span className="text-[9px] font-medium tracking-normal leading-none">Shop</span>
                         </button>
                       </div>
 
@@ -1594,7 +1467,7 @@ export default function App() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-xs z-50 flex flex-col justify-end"
+                            className="absolute inset-0 bg-black/50 backdrop-blur-xs z-50 flex flex-col justify-end"
                             onClick={() => setSelectedDetailGame(null)}
                             id="details_sheet_backdrop"
                           >
@@ -1603,13 +1476,12 @@ export default function App() {
                               animate={{ y: 0 }}
                               exit={{ y: '100%' }}
                               transition={{ type: 'spring', damping: 28, stiffness: 240 }}
-                              className="bg-bg rounded-t-[32px] border-t-4 p-5 text-left max-h-[85%] flex flex-col pointer-events-auto overflow-hidden relative shadow-2xl"
-                              style={{ borderColor: accentColor }}
+                              className="bg-surface rounded-t-3xl border-t border-line p-5 text-left max-h-[85%] flex flex-col pointer-events-auto overflow-hidden relative shadow-2xl"
                               onClick={(e) => e.stopPropagation()}
                               id="details_sheet_panel"
                             >
                               {/* Pull Indicator Bar */}
-                              <div className="w-12 h-1 bg-ink-soft/30 rounded-full mx-auto mb-4" />
+                              <div className="w-10 h-1 bg-ink-soft/20 rounded-full mx-auto mb-4" />
 
                               {/* Title Block */}
                               <div className="flex gap-4 items-start mb-4">
