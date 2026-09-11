@@ -28,6 +28,7 @@ import AirplaneShooter from './components/AirplaneShooter';
 import LeaderboardModal from './components/LeaderboardModal';
 import DailyStreakModal from './components/DailyStreakModal';
 import EngineServerModal from './components/EngineServerModal';
+import RecentlyPlayed from './components/RecentlyPlayed';
 import { playSound, triggerHaptic } from './utils/audio';
 
 const GAMES: Game[] = [
@@ -564,7 +565,24 @@ export default function App() {
     };
     updateTime();
     const interval = setInterval(updateTime, 60000);
-    return () => clearInterval(interval);
+
+    // Real-time synchronization across browser tabs and storage events
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'ocean_games_user' && e.newValue) {
+        try {
+          const parsed = JSON.parse(e.newValue);
+          setUser(parsed);
+        } catch {
+          // ignore
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   // Save progress state helper
@@ -658,12 +676,44 @@ export default function App() {
       return next;
     });
 
+    // Real-time update for Recently Played (tracking the last 3 games launched with live timestamps)
+    const now = Date.now();
+    setUser((currentUser) => {
+      if (!currentUser) return currentUser;
+      const prevRecent = currentUser.recentlyPlayed || [];
+      const filtered = prevRecent.filter((item) => {
+        const id = typeof item === 'string' ? item : item.gameId;
+        return id !== game.id;
+      });
+      const nextRecent = [{ gameId: game.id, timestamp: now }, ...filtered].slice(0, 3);
+      const nextUser: UserProgress = {
+        ...currentUser,
+        recentlyPlayed: nextRecent,
+      };
+      localStorage.setItem('ocean_games_user', JSON.stringify(nextUser));
+      return nextUser;
+    });
+
     if (game.playable) {
       setActiveScreen(game.id as any);
     } else {
       setSelectedTeaserGame(game);
       setActiveScreen('teaser');
     }
+  };
+
+  const handleClearRecentlyPlayed = () => {
+    playSound('tap', user?.soundEnabled);
+    triggerHaptic(15, user?.hapticEnabled);
+    setUser((currentUser) => {
+      if (!currentUser) return currentUser;
+      const nextUser: UserProgress = {
+        ...currentUser,
+        recentlyPlayed: [],
+      };
+      localStorage.setItem('ocean_games_user', JSON.stringify(nextUser));
+      return nextUser;
+    });
   };
 
   // Custom UI icon helper mapping to professional Lucide icons
@@ -935,6 +985,17 @@ export default function App() {
                       {activeTab === 'arcade' && (
                         <div className="flex-1 flex flex-col overflow-hidden" id="tab_arcade_view">
                           
+                          {/* Recently Played Quick Access Section (Real-time tracking of last 3 launched games) */}
+                          <RecentlyPlayed
+                            recentlyPlayed={user?.recentlyPlayed || []}
+                            allGames={GAMES}
+                            onLaunchGame={handleLaunchGame}
+                            onClearHistory={handleClearRecentlyPlayed}
+                            getGameIcon={getGameIcon}
+                            soundEnabled={user?.soundEnabled}
+                            hapticEnabled={user?.hapticEnabled}
+                          />
+
                           {/* Search bar & filters panel */}
                           <div className="space-y-2.5 mb-4" id="search_and_filters">
                             <div className="flex gap-2 items-center" id="search_sort_container">

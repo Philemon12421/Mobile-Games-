@@ -12,6 +12,11 @@ export interface Game {
   howToPlay?: string[];
 }
 
+export interface RecentlyPlayedItem {
+  gameId: string;
+  timestamp: number;
+}
+
 export interface UserProgress {
   nickname: string;
   avatar: string;
@@ -32,5 +37,6 @@ export interface UserProgress {
   lastDailySpin?: string;
   serverEngine?: 'unreal' | 'unity';
   serverRegion?: string;
+  recentlyPlayed?: (RecentlyPlayedItem | string)[];
 }
 
