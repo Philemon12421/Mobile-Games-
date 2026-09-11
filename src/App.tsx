@@ -5,7 +5,7 @@ import {
   Sparkles, Volume2, VolumeX, Smartphone, Trophy, Award, 
   TrendingUp, Compass, Flame, Info, CheckCircle2, ChevronRight, Check,
   Grid3x3, Binary, Scissors, Brain, Hammer, Wind, Layers, Route, Footprints, Rocket, Plane, Hash, Disc, Crown, CircleDot,
-  Star, Gift, X, RotateCcw, Server, Activity, BarChart2, Clock
+  Star, Gift, X, RotateCcw, Server, Activity, BarChart2, Clock, Battery, BatteryWarning, Zap
 } from 'lucide-react';
 import { Game, UserProgress } from './types';
 import { formatPlaytime, formatTotalHours } from './utils/time';
@@ -507,6 +507,19 @@ export default function App() {
   // Time state for mobile status bar
   const [timeStr, setTimeStr] = useState('12:00');
 
+  // Simulated device battery state (fluctuates dynamically under gaming load)
+  const [batteryLevel, setBatteryLevel] = useState<number>(() => {
+    const saved = localStorage.getItem('ocean_simulated_battery');
+    if (saved !== null) {
+      const parsed = parseInt(saved, 10);
+      if (!isNaN(parsed)) return Math.max(1, Math.min(100, parsed));
+    }
+    return 18; // Default at 18% so initial gameplay quickly encounters the <15% low battery threshold
+  });
+  const [isCharging, setIsCharging] = useState(false);
+  const [lowBatteryDismissed, setLowBatteryDismissed] = useState(false);
+  const [showBatteryMenu, setShowBatteryMenu] = useState(false);
+
   // Quest achievements
   const [quests, setQuests] = useState([
     { id: 'play_game', title: 'Explore Any Game', desc: 'Launch a game or teaser from the console', reward: 20, done: false },
@@ -610,6 +623,54 @@ export default function App() {
 
     return () => clearInterval(interval);
   }, [activeScreen]);
+
+  // Battery fluctuation and discharge effect while playing games
+  useEffect(() => {
+    // If charging, increment battery level smoothly
+    if (isCharging) {
+      const chargeInterval = setInterval(() => {
+        setBatteryLevel((prev) => {
+          if (prev >= 100) {
+            setIsCharging(false);
+            localStorage.setItem('ocean_simulated_battery', '100');
+            return 100;
+          }
+          const next = Math.min(100, prev + 2);
+          localStorage.setItem('ocean_simulated_battery', next.toString());
+          if (next >= 15) {
+            setLowBatteryDismissed(false);
+          }
+          return next;
+        });
+      }, 1200);
+      return () => clearInterval(chargeInterval);
+    }
+
+    // Gaming load discharge & micro-fluctuations while in an active game
+    if (activeScreen === 'hub' || activeScreen === 'teaser') return;
+
+    const drainInterval = setInterval(() => {
+      setBatteryLevel((prev) => {
+        // Micro-fluctuations under gaming load:
+        // 60% chance to drop 1%, 25% chance to stay constant, 15% chance to momentarily rebound 1% (simulated battery voltage load jitter)
+        const rand = Math.random();
+        let delta = 0;
+        if (rand < 0.6) {
+          delta = -1;
+        } else if (rand < 0.85) {
+          delta = 0;
+        } else {
+          delta = prev > 5 ? 1 : 0;
+        }
+
+        const next = Math.max(1, Math.min(100, prev + delta));
+        localStorage.setItem('ocean_simulated_battery', next.toString());
+        return next;
+      });
+    }, 3200);
+
+    return () => clearInterval(drainInterval);
+  }, [activeScreen, isCharging]);
 
   // Save progress state helper
   const saveProgress = (updatedUser: UserProgress) => {
@@ -837,20 +898,186 @@ export default function App() {
             <div className="w-16 h-4 sm:block hidden" />
           )}
 
-          <div className="flex items-center gap-1.5" id="status_icons">
-            <span className="text-[10px]">LTE</span>
+          <div className="flex items-center gap-2" id="status_icons">
+            <span className="text-[10px] font-bold">LTE</span>
             <div className="flex gap-0.5 items-end h-3">
               <span className="w-0.5 h-1 bg-ink rounded-xs" />
               <span className="w-0.5 h-1.5 bg-ink rounded-xs" />
               <span className="w-0.5 h-2 bg-ink rounded-xs" />
               <span className="w-0.5 h-2.5 bg-ink rounded-xs" />
             </div>
-            {/* Battery */}
-            <div className="w-5 h-2.5 border border-ink rounded-xs p-0.5 flex items-center">
-              <div className="w-full h-full bg-ink rounded-xs" />
-            </div>
+
+            {/* Dynamic Battery Pill */}
+            <button
+              onClick={() => {
+                playSound('tap', user?.soundEnabled);
+                setShowBatteryMenu((prev) => !prev);
+              }}
+              className={`flex items-center gap-1.5 px-1.5 py-0.5 rounded-md transition-all cursor-pointer select-none relative ${
+                batteryLevel < 15
+                  ? 'bg-coral/15 text-coral border border-coral/35 animate-pulse'
+                  : 'hover:bg-line/20 text-ink'
+              }`}
+              id="status_battery_pill"
+              title={`Simulated Battery: ${batteryLevel}% ${isCharging ? '(Charging)' : ''} - Click for power controls`}
+            >
+              {isCharging ? (
+                <Zap className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0 animate-pulse" />
+              ) : batteryLevel < 15 ? (
+                <BatteryWarning className="w-3 h-3 text-coral shrink-0" />
+              ) : null}
+
+              {/* Dynamic Percentage Readout */}
+              <span
+                className={`text-[10px] font-mono font-black ${
+                  batteryLevel < 15
+                    ? 'text-coral'
+                    : batteryLevel <= 25
+                      ? 'text-amber-500'
+                      : 'text-ink'
+                }`}
+                id="status_battery_pct"
+              >
+                {batteryLevel}%
+              </span>
+
+              {/* Graphical Battery Cell */}
+              <div className="flex items-center">
+                <div
+                  className={`w-5 h-2.5 border rounded-xs p-[1px] flex items-center ${
+                    batteryLevel < 15
+                      ? 'border-coral bg-coral/10'
+                      : batteryLevel <= 25
+                        ? 'border-amber-500 bg-amber-500/10'
+                        : 'border-ink/80 bg-surface'
+                  }`}
+                >
+                  <div
+                    className={`h-full rounded-xs transition-all duration-300 ${
+                      batteryLevel < 15
+                        ? 'bg-coral'
+                        : batteryLevel <= 25
+                          ? 'bg-amber-500'
+                          : isCharging
+                            ? 'bg-amber-400'
+                            : 'bg-emerald-500 dark:bg-emerald-400'
+                    }`}
+                    style={{ width: `${Math.max(10, Math.min(100, batteryLevel))}%` }}
+                  />
+                </div>
+                <div
+                  className={`w-[2px] h-1 rounded-r-xs ${
+                    batteryLevel < 15
+                      ? 'bg-coral'
+                      : batteryLevel <= 25
+                        ? 'bg-amber-500'
+                        : 'bg-ink/80'
+                  }`}
+                />
+              </div>
+            </button>
           </div>
         </div>
+
+        {/* Quick Battery Control Popover */}
+        <AnimatePresence>
+          {showBatteryMenu && (
+            <motion.div
+              initial={{ opacity: 0, y: -8, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -8, scale: 0.95 }}
+              className="absolute top-11 right-5 z-50 bg-surface border border-line rounded-2xl p-3 shadow-xl w-64 text-ink text-left select-none"
+              id="battery_control_menu"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Battery className="w-4 h-4 text-coral" />
+                  <span className="text-xs font-black">Device Battery Sim</span>
+                </div>
+                <button
+                  onClick={() => setShowBatteryMenu(false)}
+                  className="w-5 h-5 rounded-full hover:bg-line/20 flex items-center justify-center text-xs font-bold text-ink-soft cursor-pointer"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="bg-bg p-2.5 rounded-xl border border-line/60 mb-2.5 flex items-center justify-between">
+                <div>
+                  <span className="text-[9px] text-ink-soft font-bold block uppercase tracking-wider">Level</span>
+                  <span className={`text-base font-black font-mono ${batteryLevel < 15 ? 'text-coral' : 'text-ink'}`}>
+                    {batteryLevel}%
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] text-ink-soft font-bold block uppercase tracking-wider">Status</span>
+                  <span className="text-[10.5px] font-bold text-ink flex items-center gap-1 justify-end">
+                    {isCharging ? (
+                      <>
+                        <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+                        <span>Charging</span>
+                      </>
+                    ) : activeScreen !== 'hub' && activeScreen !== 'teaser' ? (
+                      <span className="text-coral">🎮 Active Load</span>
+                    ) : (
+                      'Standby'
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-xs font-bold">
+                <button
+                  onClick={() => {
+                    setIsCharging(!isCharging);
+                    playSound('tap', user?.soundEnabled);
+                  }}
+                  className={`w-full py-2 px-2.5 rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer transition-colors ${
+                    isCharging
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-600 dark:text-amber-400'
+                      : 'bg-surface border-line hover:bg-line/20 text-ink'
+                  }`}
+                  id="btn_toggle_charger"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>{isCharging ? 'Disconnect Charger' : 'Connect Charger'}</span>
+                </button>
+
+                <div className="flex gap-1.5 pt-1">
+                  <button
+                    onClick={() => {
+                      setBatteryLevel(14);
+                      setIsCharging(false);
+                      setLowBatteryDismissed(false);
+                      localStorage.setItem('ocean_simulated_battery', '14');
+                      playSound('tap', user?.soundEnabled);
+                      setShowBatteryMenu(false);
+                    }}
+                    className="flex-1 py-1.5 px-2 rounded-lg bg-coral/15 border border-coral/30 text-coral text-[10px] font-extrabold hover:bg-coral/25 cursor-pointer text-center"
+                    id="btn_test_low_battery"
+                    title="Set battery level to 14% to preview Low Battery warning"
+                  >
+                    Test 14% (Low)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setBatteryLevel(100);
+                      setIsCharging(false);
+                      localStorage.setItem('ocean_simulated_battery', '100');
+                      playSound('tap', user?.soundEnabled);
+                      setShowBatteryMenu(false);
+                    }}
+                    className="flex-1 py-1.5 px-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-extrabold hover:bg-emerald-500/25 cursor-pointer text-center"
+                    id="btn_set_full_battery"
+                    title="Set battery level to 100%"
+                  >
+                    Set 100%
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Content Router */}
         <div className="flex-1 overflow-hidden relative bg-bg flex flex-col" id="app_main_content">
@@ -1016,6 +1243,67 @@ export default function App() {
                           </button>
                         </motion.div>
                       )}
+
+                      {/* Low Battery Warning Alert in Hub */}
+                      <AnimatePresence>
+                        {batteryLevel < 15 && !lowBatteryDismissed && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                            className="bg-coral/10 border-2 border-coral/40 rounded-2xl p-3 mb-3.5 flex items-center justify-between gap-3 text-coral shadow-xs relative overflow-hidden"
+                            id="low_battery_hub_alert"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <div className="w-9 h-9 rounded-xl bg-coral/20 flex items-center justify-center shrink-0 border border-coral/30">
+                                <BatteryWarning className="w-5 h-5 text-coral animate-bounce" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-[9px] font-black uppercase tracking-wider bg-coral/25 text-coral px-1.5 py-0.5 rounded leading-none">
+                                    Low Battery
+                                  </span>
+                                  <span className="text-xs font-black text-coral font-mono">
+                                    {batteryLevel}%
+                                  </span>
+                                </div>
+                                <p className="text-[11px] font-bold text-ink-soft mt-1 leading-snug">
+                                  Device battery is below 15%! Connect a charger to keep gaming smoothly.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                onClick={() => {
+                                  playSound('tap', user?.soundEnabled);
+                                  setIsCharging(true);
+                                }}
+                                className={`px-3 py-1.5 font-bold text-xs rounded-xl transition-all cursor-pointer shadow-xs flex items-center gap-1 ${
+                                  isCharging
+                                    ? 'bg-amber-500 text-slate-950'
+                                    : 'bg-coral text-white hover:bg-coral/90'
+                                }`}
+                                id="btn_hub_recharge"
+                                title="Connect simulated charger"
+                              >
+                                <Zap className="w-3.5 h-3.5 fill-current" />
+                                <span>{isCharging ? 'Charging' : 'Plug In'}</span>
+                              </button>
+                              <button
+                                onClick={() => {
+                                  playSound('tap', user?.soundEnabled);
+                                  setLowBatteryDismissed(true);
+                                }}
+                                className="w-7 h-7 rounded-xl bg-surface border border-line/70 hover:bg-line/20 flex items-center justify-center text-xs font-black text-ink-soft cursor-pointer transition-colors"
+                                title="Dismiss alert"
+                                id="btn_dismiss_low_battery"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
                       {/* Dynamic Tab Selector (Arcade, Quests, Profile/Settings) */}
                       {activeTab === 'arcade' && (
