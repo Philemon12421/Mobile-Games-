@@ -5,9 +5,10 @@ import {
   Sparkles, Volume2, VolumeX, Smartphone, Trophy, Award, 
   TrendingUp, Compass, Flame, Info, CheckCircle2, ChevronRight, Check,
   Grid3x3, Binary, Scissors, Brain, Hammer, Wind, Layers, Route, Footprints, Rocket, Plane, Hash, Disc, Crown, CircleDot,
-  Star, Gift, X, RotateCcw, Server, Activity, BarChart2
+  Star, Gift, X, RotateCcw, Server, Activity, BarChart2, Clock
 } from 'lucide-react';
 import { Game, UserProgress } from './types';
+import { formatPlaytime, formatTotalHours } from './utils/time';
 import Onboarding from './components/Onboarding';
 import TicTacToe from './components/TicTacToe';
 import Game2048 from './components/Game2048';
@@ -585,6 +586,31 @@ export default function App() {
     };
   }, []);
 
+  // Real-time playtime tracker: increments active game's playtime second-by-second
+  useEffect(() => {
+    if (activeScreen === 'hub' || activeScreen === 'teaser') return;
+    const currentGameId = activeScreen;
+
+    const interval = setInterval(() => {
+      setUser((currentUser) => {
+        if (!currentUser) return currentUser;
+        const currentPlaytimes = currentUser.playtimes || {};
+        const updatedTime = (currentPlaytimes[currentGameId] || 0) + 1;
+        const nextUser: UserProgress = {
+          ...currentUser,
+          playtimes: {
+            ...currentPlaytimes,
+            [currentGameId]: updatedTime,
+          },
+        };
+        localStorage.setItem('ocean_games_user', JSON.stringify(nextUser));
+        return nextUser;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [activeScreen]);
+
   // Save progress state helper
   const saveProgress = (updatedUser: UserProgress) => {
     setUser(updatedUser);
@@ -788,8 +814,29 @@ export default function App() {
         {/* Device Status Bar */}
         <div className="h-10 bg-bg text-ink px-6 pt-2 flex justify-between items-center z-30 select-none text-xs font-bold" id="device_status_bar">
           <span className="font-sans">{timeStr}</span>
-          {/* Notch Spacer */}
-          <div className="w-16 h-4 sm:block hidden" />
+          
+          {/* Active Game Live Playtime Pill */}
+          {activeScreen !== 'hub' && activeScreen !== 'teaser' ? (
+            <button
+              onClick={() => {
+                const g = GAMES.find((item) => item.id === activeScreen);
+                if (g) {
+                  playSound('tap', user?.soundEnabled);
+                  setSelectedDetailGame(g);
+                }
+              }}
+              className="flex items-center gap-1.5 bg-surface border border-line/70 hover:border-coral/50 px-2.5 py-0.5 rounded-full text-[10px] font-mono text-ink cursor-pointer transition-all shadow-2xs"
+              title="Click to view game details and live playtime"
+              id="live_playtime_pill"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <Clock className="w-3 h-3 text-coral" />
+              <span>{formatPlaytime(user?.playtimes?.[activeScreen] || 0)}</span>
+            </button>
+          ) : (
+            <div className="w-16 h-4 sm:block hidden" />
+          )}
+
           <div className="flex items-center gap-1.5" id="status_icons">
             <span className="text-[10px]">LTE</span>
             <div className="flex gap-0.5 items-end h-3">
@@ -1460,115 +1507,6 @@ export default function App() {
                         </button>
                       </div>
 
-                      {/* Game Details bottom sheet drawer overlay */}
-                      <AnimatePresence>
-                        {selectedDetailGame && (
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/50 backdrop-blur-xs z-50 flex flex-col justify-end"
-                            onClick={() => setSelectedDetailGame(null)}
-                            id="details_sheet_backdrop"
-                          >
-                            <motion.div
-                              initial={{ y: '100%' }}
-                              animate={{ y: 0 }}
-                              exit={{ y: '100%' }}
-                              transition={{ type: 'spring', damping: 28, stiffness: 240 }}
-                              className="bg-surface rounded-t-3xl border-t border-line p-5 text-left max-h-[85%] flex flex-col pointer-events-auto overflow-hidden relative shadow-2xl"
-                              onClick={(e) => e.stopPropagation()}
-                              id="details_sheet_panel"
-                            >
-                              {/* Pull Indicator Bar */}
-                              <div className="w-10 h-1 bg-ink-soft/20 rounded-full mx-auto mb-4" />
-
-                              {/* Title Block */}
-                              <div className="flex gap-4 items-start mb-4">
-                                <div className={`w-14 h-14 rounded-2xl ${PHASE_COLORS[selectedDetailGame.phase]?.bg || 'bg-line/20'} flex items-center justify-center shrink-0 shadow-inner`}>
-                                  {getGameIcon(selectedDetailGame.id, `w-7 h-7 ${PHASE_COLORS[selectedDetailGame.phase]?.text || 'text-ink'}`)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <h3 className="font-display font-black text-lg text-ink leading-tight truncate">
-                                      {selectedDetailGame.name}
-                                    </h3>
-                                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md border uppercase tracking-wider ${PHASE_COLORS[selectedDetailGame.phase]?.bg || 'bg-line/20'} ${PHASE_COLORS[selectedDetailGame.phase]?.text || 'text-ink-soft'}`}>
-                                      Phase {selectedDetailGame.phase}
-                                    </span>
-                                  </div>
-                                  <p className="text-[10px] text-ink-soft font-bold mt-0.5">
-                                    Genre: {selectedDetailGame.category || 'Classic'}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Score & Plays quick badges */}
-                              <div className="grid grid-cols-2 gap-3 mb-4">
-                                <div className="bg-surface border border-line rounded-xl p-2.5 flex flex-col justify-center">
-                                  <span className="text-[9px] font-black text-ink-soft uppercase tracking-widest leading-none">Your High Score</span>
-                                  <span className="text-xs font-black text-ink mt-1.5 leading-none">
-                                    {user?.highScores?.[selectedDetailGame.id] ?? '0'} XP
-                                  </span>
-                                </div>
-                                <div className="bg-surface border border-line rounded-xl p-2.5 flex flex-col justify-center">
-                                  <span className="text-[9px] font-black text-ink-soft uppercase tracking-widest leading-none">Popularity</span>
-                                  <span className="text-xs font-black text-ink mt-1.5 leading-none">
-                                    {gamePlays[selectedDetailGame.id] ?? selectedDetailGame.plays ?? 0} plays
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Description */}
-                              <div className="mb-4 bg-surface/50 border border-line/50 p-3 rounded-xl">
-                                <h4 className="text-[9px] font-black uppercase tracking-widest text-ink-soft mb-1">Game Overview</h4>
-                                <p className="text-xs leading-relaxed text-ink-soft font-bold">
-                                  {selectedDetailGame.desc}
-                                </p>
-                              </div>
-
-                              {/* How to Play Bullet List */}
-                              <div className="mb-4 flex-1 overflow-y-auto pr-1">
-                                <h4 className="text-[9px] font-black uppercase tracking-widest text-ink-soft mb-2.5">How to Play</h4>
-                                <ul className="space-y-2 text-xs font-bold text-ink-soft leading-relaxed">
-                                  {selectedDetailGame.howToPlay?.map((rule, idx) => (
-                                    <li key={idx} className="flex gap-2.5 items-start">
-                                      <span className="w-5 h-5 rounded-full bg-coral/15 text-coral flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">
-                                        {idx + 1}
-                                      </span>
-                                      <span className="flex-1 mt-0.5">{rule}</span>
-                                    </li>
-                                  )) || (
-                                    <li className="italic text-ink-soft/60">Standard classic rules apply. Avoid hitting walls or boundaries.</li>
-                                  )}
-                                </ul>
-                              </div>
-
-                              {/* Bottom CTA buttons */}
-                              <div className="flex gap-3 pt-3 border-t border-line/40 shrink-0">
-                                <button
-                                  onClick={() => setSelectedDetailGame(null)}
-                                  className="flex-1 bg-surface border border-line hover:bg-line/20 text-ink font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
-                                >
-                                  Close
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    const g = selectedDetailGame;
-                                    setSelectedDetailGame(null);
-                                    handleLaunchGame(g);
-                                  }}
-                                  className="flex-1 text-white font-display font-extrabold text-xs py-3 rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
-                                  style={{ backgroundColor: accentColor }}
-                                >
-                                  Launch Game <ChevronRight className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </motion.div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
                       {/* Daily Lucky Wheel Modal */}
                       <AnimatePresence>
                         {showDailySpin && (
@@ -1861,6 +1799,143 @@ export default function App() {
                       }}
                     />
                   )}
+
+                  {/* Game Details bottom sheet drawer overlay (accessible across hub and active games) */}
+                  <AnimatePresence>
+                    {selectedDetailGame && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-black/60 backdrop-blur-xs z-50 flex flex-col justify-end"
+                        onClick={() => setSelectedDetailGame(null)}
+                        id="details_sheet_backdrop"
+                      >
+                        <motion.div
+                          initial={{ y: '100%' }}
+                          animate={{ y: 0 }}
+                          exit={{ y: '100%' }}
+                          transition={{ type: 'spring', damping: 28, stiffness: 240 }}
+                          className="bg-surface rounded-t-3xl border-t border-line p-5 text-left max-h-[85%] flex flex-col pointer-events-auto overflow-hidden relative shadow-2xl"
+                          onClick={(e) => e.stopPropagation()}
+                          id="details_sheet_panel"
+                        >
+                          {/* Pull Indicator Bar */}
+                          <div className="w-10 h-1 bg-ink-soft/20 rounded-full mx-auto mb-4" />
+
+                          {/* Title Block */}
+                          <div className="flex gap-4 items-start mb-4">
+                            <div className={`w-14 h-14 rounded-2xl ${PHASE_COLORS[selectedDetailGame.phase]?.bg || 'bg-line/20'} flex items-center justify-center shrink-0 shadow-inner`}>
+                              {getGameIcon(selectedDetailGame.id, `w-7 h-7 ${PHASE_COLORS[selectedDetailGame.phase]?.text || 'text-ink'}`)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-display font-black text-lg text-ink leading-tight truncate">
+                                  {selectedDetailGame.name}
+                                </h3>
+                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md border uppercase tracking-wider ${PHASE_COLORS[selectedDetailGame.phase]?.bg || 'bg-line/20'} ${PHASE_COLORS[selectedDetailGame.phase]?.text || 'text-ink-soft'}`}>
+                                  Phase {selectedDetailGame.phase}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-ink-soft font-bold mt-0.5">
+                                Genre: {selectedDetailGame.category || 'Classic'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Key Stats Badges: High Score, Total Playtime (Real-time), Popularity */}
+                          <div className="grid grid-cols-3 gap-2 mb-4" id="game_detail_stats">
+                            <div className="bg-surface border border-line/70 rounded-xl p-2.5 flex flex-col justify-between" id="stat_high_score">
+                              <span className="text-[8.5px] font-bold text-ink-soft uppercase tracking-wider leading-none">High Score</span>
+                              <span className="text-xs font-extrabold text-ink mt-1.5 leading-none truncate">
+                                {user?.highScores?.[selectedDetailGame.id] ?? '0'} XP
+                              </span>
+                            </div>
+
+                            <div className="bg-surface border border-line/70 rounded-xl p-2.5 flex flex-col justify-between relative overflow-hidden" id="stat_total_playtime">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[8.5px] font-bold text-ink-soft uppercase tracking-wider leading-none">Playtime</span>
+                                {activeScreen === selectedDetailGame.id && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping shrink-0" title="Actively playing" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1 mt-1.5 leading-none">
+                                <span className="text-xs font-extrabold text-ink font-mono">
+                                  {formatPlaytime(user?.playtimes?.[selectedDetailGame.id] || 0)}
+                                </span>
+                                {activeScreen === selectedDetailGame.id && (
+                                  <span className="text-[7.5px] font-black uppercase text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded leading-none">
+                                    Live
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="bg-surface border border-line/70 rounded-xl p-2.5 flex flex-col justify-between" id="stat_popularity">
+                              <span className="text-[8.5px] font-bold text-ink-soft uppercase tracking-wider leading-none">Plays</span>
+                              <span className="text-xs font-extrabold text-ink mt-1.5 leading-none truncate">
+                                {gamePlays[selectedDetailGame.id] ?? selectedDetailGame.plays ?? 0}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Description */}
+                          <div className="mb-4 bg-surface/50 border border-line/50 p-3 rounded-xl">
+                            <h4 className="text-[9px] font-black uppercase tracking-widest text-ink-soft mb-1">Game Overview</h4>
+                            <p className="text-xs leading-relaxed text-ink-soft font-bold">
+                              {selectedDetailGame.desc}
+                            </p>
+                          </div>
+
+                          {/* How to Play Bullet List */}
+                          <div className="mb-4 flex-1 overflow-y-auto pr-1">
+                            <h4 className="text-[9px] font-black uppercase tracking-widest text-ink-soft mb-2.5">How to Play</h4>
+                            <ul className="space-y-2 text-xs font-bold text-ink-soft leading-relaxed">
+                              {selectedDetailGame.howToPlay?.map((rule, idx) => (
+                                <li key={idx} className="flex gap-2.5 items-start">
+                                  <span className="w-5 h-5 rounded-full bg-coral/15 text-coral flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">
+                                    {idx + 1}
+                                  </span>
+                                  <span className="flex-1 mt-0.5">{rule}</span>
+                                </li>
+                              )) || (
+                                <li className="italic text-ink-soft/60">Standard classic rules apply. Avoid hitting walls or boundaries.</li>
+                              )}
+                            </ul>
+                          </div>
+
+                          {/* Bottom CTA buttons */}
+                          <div className="flex gap-3 pt-3 border-t border-line/40 shrink-0">
+                            <button
+                              onClick={() => setSelectedDetailGame(null)}
+                              className="flex-1 bg-surface border border-line hover:bg-line/20 text-ink font-bold text-xs py-3 rounded-xl transition-colors cursor-pointer"
+                              id="btn_close_details"
+                            >
+                              Close
+                            </button>
+                            <button
+                              onClick={() => {
+                                const g = selectedDetailGame;
+                                setSelectedDetailGame(null);
+                                if (activeScreen !== g.id) {
+                                  handleLaunchGame(g);
+                                }
+                              }}
+                              className="flex-1 text-white font-display font-extrabold text-xs py-3 rounded-xl shadow-md transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-1.5"
+                              style={{ backgroundColor: accentColor }}
+                              id="btn_launch_or_resume"
+                            >
+                              {activeScreen === selectedDetailGame.id ? (
+                                <>Resume Game <ChevronRight className="w-4 h-4" /></>
+                              ) : (
+                                <>Launch Game <ChevronRight className="w-4 h-4" /></>
+                              )}
+                            </button>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                 </div>
               </motion.div>

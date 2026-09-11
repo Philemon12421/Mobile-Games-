@@ -38,5 +38,6 @@ export interface UserProgress {
   serverEngine?: 'unreal' | 'unity';
   serverRegion?: string;
   recentlyPlayed?: (RecentlyPlayedItem | string)[];
+  playtimes?: Record<string, number>;
 }
 
